@@ -3,6 +3,7 @@ node_modules
 dist
 .nitro
 .vinxi
+.vercel
 .env
 .env.*
 *.log
