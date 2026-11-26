@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WeekPlate</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Inter:wght@400;500;600&display=swap">
+<style>
+*{box-sizing:border-box}
+:root{--bg:#F3F4F0;--sf:#fff;--ink:#111815;--mu:#5B665F;--ln:#DCE0D9;--ac:#FFC93C;--tl:91%;--chip:#E8EBE5;color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0C110E;--sf:#161D19;--ink:#EDF2EE;--mu:#98A59D;--ln:#29332D;--tl:19%;--chip:#202A24;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0C110E;--sf:#161D19;--ink:#EDF2EE;--mu:#98A59D;--ln:#29332D;--tl:19%;--chip:#202A24;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:35}
+h1,h2,h3,.num{font-family:"Bricolage Grotesque",Inter,system-ui,sans-serif;margin:0;line-height:1.05;letter-spacing:-.02em}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.logo{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding:14px 20px;font:800 1.3rem "Bricolage Grotesque",sans-serif;display:flex;gap:8px;align-items:center}
+.logo i{width:20px;height:20px;border-radius:50%;background:var(--ac);box-shadow:inset 0 0 0 5px var(--bg),0 0 0 2px var(--ink)}
+main{max-width:1180px;margin:0 auto;padding:4px 20px 120px}
+nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:25;display:flex;gap:2px;background:var(--ink);border-radius:99px;padding:5px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+nav button{background:none;border:0;color:var(--bg);opacity:.7;padding:10px 18px;border-radius:99px}
+nav button[aria-current="page"]{background:var(--ac);color:#111815;opacity:1;font-weight:600}
+.mu{color:var(--mu);font-size:.9rem;margin:0}
+.big{font-size:clamp(2.4rem,8vw,4.6rem);font-weight:800}
+.days{display:flex;gap:8px;overflow-x:auto;padding:16px 0 6px}
+.dp{flex:none;border:1.5px solid var(--ln);background:none;border-radius:18px;padding:8px 14px;text-align:center;min-width:64px}
+.dp b{display:block;font-family:"Bricolage Grotesque",sans-serif;font-size:1.2rem}
+.dp[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.bento{display:grid;gap:12px;grid-template-columns:repeat(3,1fr);margin:14px 0 22px}
+.tile{background:var(--sf);border-radius:24px;padding:16px;border:1px solid var(--ln)}
+.tile.ring{grid-column:1/-1;display:flex;align-items:center;gap:20px}
+.tile .num{font-size:1.8rem;font-weight:700}
+.bar{height:8px;border-radius:9px;background:var(--chip);margin-top:8px;overflow:hidden}.bar b{display:block;height:100%;background:var(--ink);border-radius:9px}
+.meals{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.mc{background:hsl(var(--h,40) 55% var(--tl));border-radius:30px;padding:18px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;border:0;color:var(--ink)}
+.pw{border:0;background:none;padding:0;transition:transform .35s}.pw:hover{transform:rotate(6deg) scale(1.04)}
+.mc h3{font-size:1.4rem;font-weight:700}.sl{margin:6px 0 0;font-size:.82rem;font-weight:600;color:var(--mu)}
+.ac{display:flex;gap:8px;margin-top:8px}
+.b2{background:var(--sf);border:1px solid var(--ln);border-radius:99px;padding:7px 16px;font-size:.88rem}
+.b2[aria-pressed="true"]{background:var(--ac);color:#111815;border-color:var(--ac);font-weight:600}
+.b1{background:var(--ink);color:var(--bg);border:0;border-radius:99px;padding:14px 28px;font-weight:600}
+.mc.sm{flex-direction:row;text-align:left;padding:10px 14px;border-radius:24px;gap:12px;width:100%}
+.mc.sm span{display:block}.mc.sm small{display:block;color:var(--mu)}
+.wk{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));margin-top:20px}
+.wd{text-align:left;background:var(--sf);border:1px solid var(--ln);border-radius:26px;padding:16px}
+.wd .row3{display:flex;margin:12px 0 8px}.wd .row3 svg{margin-right:-14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:none;border:1.5px solid var(--ln);border-radius:99px;padding:9px 16px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ob{max-width:640px;margin:0 auto;padding-top:30px}.ob h2{font-size:clamp(2.2rem,7vw,3.4rem);font-weight:800;margin-bottom:26px}
+.ob h3{font-size:1.1rem;margin:26px 0 10px}
+.dots{display:flex;gap:6px;margin-bottom:22px}.dots i{height:5px;flex:1;border-radius:9px;background:var(--ln)}.dots i.on{background:var(--ink)}
+input[type=number],input[type=search]{font:inherit;background:var(--sf);color:var(--ink);border:1.5px solid var(--ln);border-radius:16px;padding:12px 16px}
+.step{display:inline-flex;align-items:center;gap:12px}.step button{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--ln);background:none;font-size:1.2rem}
+.row{display:flex;gap:12px;align-items:center;padding:11px 0;border-top:1px solid var(--ln)}
+.row input{width:20px;height:20px;accent-color:var(--ink)}.row em{margin-left:auto;font-style:normal;color:var(--mu);font-size:.9rem}
+.row.on span{text-decoration:line-through;color:var(--mu)}
+.ov{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center}
+.ov.open{display:flex}
+.sh{background:var(--bg);width:100%;max-width:760px;max-height:94vh;overflow-y:auto;border-radius:30px 30px 0 0;padding:22px 22px calc(26px + env(safe-area-inset-bottom,0px))}
+@media (min-width:760px){.ov{align-items:center}.sh{border-radius:30px;max-height:90vh}}
+.sh.full{max-width:1100px;height:94vh}
+.hd{display:flex;gap:16px;align-items:center;margin-bottom:16px}.hd h2{font-size:1.9rem;font-weight:800}
+.nut{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:center;font-size:.72rem;color:var(--mu);margin:14px 0}
+.nut div{background:var(--sf);border:1px solid var(--ln);border-radius:18px;padding:9px 2px}.nut b{display:block;font:700 1.25rem "Bricolage Grotesque",sans-serif;color:var(--ink)}
+ol{padding-left:22px}ol li{margin-bottom:8px}
+.gr{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));margin-top:10px}
+.c{text-align:center;margin-top:18px}
+.cook .tx{font:700 clamp(1.8rem,6vw,2.8rem)/1.15 "Bricolage Grotesque",sans-serif;margin:26px 0}
+.tm{font:800 3.4rem "Bricolage Grotesque",sans-serif}
+.tp{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.mc.lk{outline:3px solid var(--ac);outline-offset:-3px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:99px;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+.ms li{margin-bottom:14px}.ms b{font-family:"Bricolage Grotesque",sans-serif;font-size:1.05rem}
+@media (prefers-reduced-motion:reduce){.pw{transition:none}}
+</style>
+</head>
+<body>
+<div class="logo"><i></i>WeekPlate</div>
+<main id="app"></main>
+<nav id="nav" aria-label="Main"></nav>
+<div class="ov" id="ov"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+const $=s=>document.querySelector(s),clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const CN={B:'Breakfast',S:'Soup',L:'Salad',M:'Main course',D:'Dessert',K:'Snack',I:'Side dish',A:'Appetizer',R:'Bread',V:'Drinks'};
+const HUE={B:42,S:12,L:112,M:22,D:330,K:60,I:85,A:150,R:35,V:190},SLN=['Breakfast','Lunch','Dinner'],SC=['B','S','M'];
+const EQ={s:'Stovetop',o:'Oven',m:'Microwave',a:'Air fryer',i:'Instant Pot',c:'Slow cooker',b:'Blender'};
+const AG={g:'Gluten',d:'Dairy',e:'Egg',n:'Nuts',s:'Soy',f:'Fish & shellfish'};
+const DIET={any:'Everything',pesc:'Pescatarian',veg:'Vegetarian',vegan:'Vegan'};
+const PANTRY=['olive oil','soy sauce','honey','sugar','flour','rice','pasta','oats'];
+const AMT={P:[100,'g'],M:[150,'g'],K:[60,'g'],D:[50,'g'],F:[100,'g'],B:[1,'pc']},AISLE={P:'Produce',M:'Proteins',K:'Pantry',D:'Dairy & eggs',F:'Frozen',B:'Bakery'};
+const RAW=`B|Blueberry oat pancakes|g|s|gde|oats:K,blueberries:F,egg:D,milk:D|420|16|20
+B|Avocado & egg toast|g|s|gde|bread:B,avocado:P,egg:D,lemon:P|440|18|10
+B|Shakshuka|g|s|e|egg:D,tomato:P,pepper:P,onion:P|380|20|25
+B|Greek yogurt parfait|g|-|dn|yogurt:D,granola:K,berries:F,honey:K|400|26|5
+B|Veggie egg muffins|g|o|de|egg:D,spinach:P,pepper:P,feta:D|320|22|25
+B|Overnight oats|v|-|g|oats:K,oat milk:K,chia:K,berries:F|380|12|5
+B|Tofu scramble|v|s|s|tofu:M,spinach:P,tomato:P,onion:P|340|22|15
+B|Green smoothie|v|b|-|spinach:P,banana:P,protein powder:K,oat milk:K|340|22|5
+B|Air-fryer breakfast burrito|g|a|gde|tortilla:B,egg:D,black beans:K,cheddar:D|520|27|20
+S|Tomato basil soup|g|s|d|tomato:P,onion:P,basil:P,cream:D|280|8|30
+S|Red lentil soup|v|s|-|lentils:K,carrot:P,onion:P,tomato:P|450|26|35
+S|Chicken noodle soup|m|s|g|chicken:M,noodles:K,carrot:P,celery:P|420|32|35
+S|Miso soup with tofu|v|s|s|miso:K,tofu:M,seaweed:K,scallion:P|180|14|15
+S|Pumpkin soup|v|s|-|pumpkin:P,onion:P,coconut milk:K,ginger:P|300|6|35
+S|Slow-cooker minestrone|v|c|g|white beans:K,pasta:K,zucchini:P,tomato:P|380|16|20
+L|Chickpea salad bowl|v|-|-|chickpeas:K,cucumber:P,tomato:P,lemon:P|480|18|15
+L|Greek salad with feta|g|-|d|cucumber:P,tomato:P,feta:D,olives:K|360|12|10
+L|Tuna & white bean salad|f|-|f|tuna:M,white beans:K,cucumber:P,lemon:P|470|35|10
+L|Quinoa & roasted veg salad|v|o|-|quinoa:K,zucchini:P,pepper:P,lemon:P|450|16|35
+L|Chicken Caesar wrap|m|-|gde|chicken:M,tortilla:B,romaine:P,parmesan:D|560|38|15
+L|Caprese salad|g|-|d|tomato:P,mozzarella:D,basil:P,olive oil:K|340|16|5
+M|Sheet-pan salmon & sweet potato|f|o|f|salmon:M,broccoli:P,sweet potato:P,lemon:P|620|40|35
+M|Air-fryer chicken thighs|m|a|-|chicken thighs:M,broccoli:P,sweet potato:P,olive oil:K|640|46|35
+M|Instant Pot chickpea curry|v|i|-|chickpeas:K,tomato:P,coconut milk:K,rice:K|600|20|30
+M|Tofu & broccoli stir-fry|v|s|gs|tofu:M,broccoli:P,rice:K,soy sauce:K|540|30|25
+M|Slow-cooker turkey chili|m|c|-|turkey:M,black beans:K,tomato:P,onion:P|580|44|20
+M|Pasta primavera|g|s|gd|pasta:K,broccoli:P,tomato:P,parmesan:D|590|22|25
+M|Baked cod with roasted veg|f|o|f|cod:M,broccoli:P,sweet potato:P,lemon:P|480|38|35
+M|Beef tacos|m|s|g|beef:M,tortilla:B,tomato:P,onion:P|650|36|25
+M|Mushroom risotto|g|s|d|rice:K,mushroom:P,onion:P,parmesan:D|560|16|40
+M|Chicken tikka bowl|m|o|d|chicken:M,yogurt:D,rice:K,cucumber:P|620|45|35
+M|Shrimp garlic pasta|f|s|gf|shrimp:M,pasta:K,garlic:P,parsley:P|560|34|20
+M|Black bean burgers|v|a|g|black beans:K,oats:K,onion:P,bun:B|540|22|25
+D|Chocolate mousse|g|-|d|chocolate:K,cream:D,sugar:K|320|5|10
+D|Apple crumble|g|o|gd|apple:P,oats:K,butter:D,sugar:K|360|5|40
+D|Berry sorbet|v|b|-|berries:F,lemon:P,sugar:K|150|1|10
+D|Lemon yogurt cake|g|o|gde|flour:K,yogurt:D,lemon:P,egg:D|340|8|45
+D|Rice pudding|g|s|d|rice:K,milk:D,vanilla:K,sugar:K|290|8|35
+D|Baked pears with walnuts|g|o|n|pear:P,walnuts:K,honey:K,cinnamon:K|240|4|30
+K|Hummus & veg plate|v|-|g|hummus:K,carrot:P,cucumber:P,pita:B|260|9|5
+K|Roasted chickpeas|v|o|-|chickpeas:K,olive oil:K,paprika:K|180|8|30
+K|Energy bites|v|-|n|oats:K,dates:K,peanut butter:K,cocoa:K|200|6|10
+K|Cheese & apple slices|g|-|d|cheddar:D,apple:P,crackers:K|230|10|5
+I|Garlic roasted potatoes|v|o|-|potato:P,garlic:P,olive oil:K,rosemary:P|220|4|40
+I|Honey-glazed carrots|g|s|d|carrot:P,honey:K,butter:D,thyme:P|140|2|20
+I|Grilled corn|v|s|-|corn:P,lime:P,chili:K|160|5|15
+I|Steamed green beans|v|s|n|green beans:P,lemon:P,almonds:K|110|4|10
+A|Stuffed mushrooms|g|o|gd|mushroom:P,breadcrumbs:K,parmesan:D,garlic:P|180|8|25
+A|Bruschetta|v|o|g|bread:B,tomato:P,basil:P,garlic:P|190|5|15
+A|Falafel bites|v|a|-|chickpeas:K,parsley:P,garlic:P,cumin:K|240|10|25
+A|Deviled eggs|g|s|e|egg:D,mustard:K,paprika:K|150|9|20
+R|Focaccia|v|o|g|flour:K,olive oil:K,rosemary:P|280|7|45
+R|Banana bread|g|o|gden|banana:P,flour:K,egg:D,walnuts:K|310|6|50
+R|Naan|g|s|gd|flour:K,yogurt:D,garlic:P|260|8|30
+V|Mango lassi|g|b|d|mango:P,yogurt:D,cardamom:K|210|8|5
+V|Iced matcha latte|v|-|-|matcha:K,oat milk:K,ice:K|90|2|5
+V|Berry smoothie|g|b|d|berries:F,yogurt:D,banana:P|230|10|5
+V|Ginger lemonade|v|-|-|lemon:P,ginger:P,honey:K|90|0|10`;
+const CAT=[];
+RAW.split('\n').forEach(l=>{const [c,n,t,eq,al,ing,k,p,m]=l.split('|');
+  [['',1],[' (light)',.8],[' (hearty)',1.2]].forEach(([v,f])=>{const id=CAT.length;
+    CAT.push({id,cat:c,t:n+v,dt:t,eq:eq=='-'?[]:eq.split(''),al:al=='-'?[]:al.split(''),i:ing.split(',').map(x=>{const a=x.split(':');return{n:a[0],a:a[1]}}),k:Math.round(k*f),p:Math.round(p*f),m:+m,h:HUE[c]+(id*17)%30})})});
+const nut=r=>{const f=Math.round(r.k*.3/9);return{f,c:Math.max(0,Math.round((r.k-r.p*4-f*9)/4)),fi:1+2*r.i.filter(x=>'PF'.includes(x.a)).length}};
+const PCS={egg:2,tomato:1,onion:1,lemon:1,lime:1,avocado:1,banana:1,pepper:1,tortilla:1,bread:2,pita:1,bun:1,apple:1,pear:1,carrot:2,'sweet potato':1,cucumber:1,garlic:2,zucchini:1,potato:2,corn:1,mango:1,celery:2,scallion:2,romaine:1};
+const QU={bread:'slice',garlic:'clove',celery:'stalk',scallion:'stalk',romaine:'head'};
+const TBS={'olive oil':1,'soy sauce':1,honey:1,sugar:1,butter:1,cocoa:1,chia:1,'peanut butter':1,mustard:1,'protein powder':2,granola:3,miso:1};
+const TSP={paprika:1,cumin:1,cinnamon:1,cardamom:1,chili:1,rosemary:1,thyme:1,vanilla:1,ginger:1};
+const ML={milk:150,'oat milk':200,'coconut milk':100,cream:50},SP={basil:[10,'g'],parsley:[10,'g']};
+const qty=x=>SP[x.n]||(PCS[x.n]?[PCS[x.n],'pc']:TBS[x.n]?[TBS[x.n],'tbsp']:TSP[x.n]?[TSP[x.n],'tsp']:ML[x.n]?[ML[x.n],'ml']:AMT[x.a]);
+const amt=(q,u)=>{if(u=='pc')return Math.ceil(q-1e-6)+' pc';
+  if(u=='tbsp'||u=='tsp'){const v=Math.max(.5,Math.round(q*2)/2);return(Number.isInteger(v)?v:(Math.floor(v)||'')+'½')+' '+u}
+  if(u=='g'&&q>=1000)return(q/1000).toFixed(1)+' kg';if(u=='ml'&&q>=1000)return(q/1000).toFixed(1)+' l';
+  return Math.max(5,Math.round(q/5)*5)+' '+u};
+const pl=(s,c)=>c<2?s:/(tomato|potato)$/.test(s)?s+'es':s+'s';
+const disp=(x,n)=>{const q0=qty(x),q=q0[0]*n;if(q0[1]=='pc'){const c=Math.ceil(q-1e-6),un=QU[x.n];return un?`${c} ${un}${c>1?'s':''} of ${x.n}`:`${c} ${pl(x.n,c)}`}return`${amt(q,q0[1])} ${x.n}`};
+
+/** Full method for any recipe, scaled to n people. Returns timed, titled steps plus tips. */
+function how(r,n){
+  const I=r.i,Q=x=>disp(x,n),N=r.t.toLowerCase(),has=re=>re.test(N),E=r.eq[0],s=(t,x,m)=>({t,x,m:m||0});
+  const hb=x=>/lemon|lime|basil|parsley|garlic|thyme|rosemary|ginger|scallion|cumin|paprika|chili|cinnamon|cardamom|vanilla|mustard/.test(x.n);
+  const M=I.find(x=>x.a=='M')||I[0],V=I.filter(x=>x.a=='P'&&!hb(x)&&x!==M),H=I.filter(hb);
+  const G=I.filter(x=>x.a=='K'&&/rice|pasta|noodle|quinoa|oats|lentil|bean|chickpea|flour|breadcrumb/.test(x.n)&&x!==M);
+  const D=I.filter(x=>x.a=='D'),F=I.filter(x=>x.a=='F'),O=I.filter(x=>![M,...V,...H,...G].includes(x));
+  const L=a=>a.map(Q).join(', '),all=L(I),vs=L(V)||'the vegetables',m=Q(M),g=L(G),h=L(H),eg=I.find(x=>x.n=='egg');
+  const rice=G.find(x=>/rice|quinoa/.test(x.n)),fish=/cod|salmon|tuna|shrimp/.test(M.n),meat=M.a=='M'&&!fish&&!/tofu/.test(M.n),pr=M.a=='M';
+  const done=fish?'until opaque and just flaking (63 °C / 145 °F)':meat?'until cooked through (74 °C / 165 °F; no pink in the middle)':'until golden and tender';
+  const grain=rice?[s('Cook the '+rice.n,`Rinse ${Q(rice)} well. Add to a pot with ${rice.n=='quinoa'?'twice':'1½ times'} its volume of water and a pinch of salt, bring to a boil, cover and simmer on low ${rice.n=='quinoa'?'12–15':'12'} minutes. Take off the heat, rest with the lid on 5 minutes, then fluff with a fork.`,17)]:[];
+  const t=Math.max(15,Math.round(r.m*.6));let st,tp=['Taste at the end and adjust salt, pepper and acidity (a squeeze of lemon or splash of vinegar).'];
+  if(has(/smoothie|lassi|sorbet/)){
+    st=[s('Measure',`Gather ${all}.`),s('Load the blender','Add liquids first, then soft ingredients, then frozen fruit or ice on top so the blades pull everything down.'),s('Blend','Blend on high 45–60 seconds, stopping once to scrape down the sides, until completely smooth.',1),s('Adjust','Taste it. Add a splash of liquid to thin or a few ice cubes to thicken, then blend 10 seconds more.'),s('Serve','Pour into a chilled glass and drink straight away for the best texture.')];tp=['Freeze ripe banana slices ahead for a thicker, creamier result.']}
+  else if(has(/lemonade|latte/)){
+    st=[s('Measure',`Gather ${all}.`),s('Mix the base','Whisk the powder, honey or sugar with 3 tablespoons of warm (not boiling) water until fully dissolved with no lumps.'),s('Combine','Pour in the cold liquid and any juice, add a handful of ice and stir well.'),s('Serve','Taste, adjust the sweetness and serve over fresh ice.')]}
+  else if(has(/overnight|parfait/)){
+    st=[s('Measure',`Gather ${all}.`),s('Combine the base','Stir the oats or yogurt with the milk and any chia or honey in a jar or bowl until no dry patches remain.'),s('Layer','Add the fruit and toppings. For a parfait, alternate layers of yogurt, granola and fruit so the granola stays crunchy.'),...(has(/parfait/)?[]:[s('Chill','Cover and refrigerate at least 2 hours, or overnight, until the oats have softened.',120)]),s('Serve','Loosen with a splash of milk if it is too thick and top with fresh fruit.')]}
+  else if(has(/pancake/)){
+    st=[s('Mix the batter',`Whisk the dry ingredients (${g}) in a bowl. In another bowl whisk ${L(D)}. Pour the wet into the dry and stir just until combined; a few lumps are fine.`),s('Rest','Let the batter rest 5 minutes so it thickens and the pancakes turn out fluffy.',5),s('Heat the pan','Warm a non-stick pan over medium heat and rub it lightly with butter or oil.',2),s('Cook','Pour about ¼ cup of batter per pancake. Cook 2–3 minutes until bubbles form and the edges look set, then flip and cook 1–2 minutes more until golden.',4),s('Serve',`Stack and top with ${L(F)||'fruit'}.`)];tp=['Keep finished pancakes in a 100 °C (200 °F) oven while you cook the rest.']}
+  else if(has(/toast/)){
+    st=[s('Toast the bread',`Toast ${Q(I.find(x=>x.n=='bread'))} until golden, 2–3 minutes, in a toaster or dry pan.`,3),s('Fry the egg',`Heat 1 teaspoon oil in a small pan over medium heat. Crack in ${Q(eg)} and cook 2–3 minutes until the whites are set and the yolk is still soft.`,3),s('Mash the avocado',`Mash ${Q(I.find(x=>x.n=='avocado'))} with a squeeze of lemon juice and a pinch of salt.`),s('Build and serve','Spread the avocado on the toast, top with the egg and finish with black pepper.')]}
+  else if(has(/scramble|shakshuka/)){
+    const sh=has(/shakshuka/);
+    st=[s('Prep',`Dice ${sh?L(V):vs} into 1 cm pieces.${!sh&&!eg?' Pat the tofu dry and crumble it into small pieces.':''}`),s('Heat the pan','Warm 1 tablespoon olive oil in a large skillet over medium heat 1–2 minutes until it shimmers.',2),
+      s('Cook the vegetables',`Add the vegetables with a pinch of salt and cook, stirring, 4–5 minutes until soft${sh?'. Add the tomatoes and simmer 8 minutes into a thick sauce':''}.`,sh?12:5),
+      sh?s('Add the eggs','Make small wells in the sauce, crack in the eggs, cover and cook 5–6 minutes until the whites are set and the yolks still jiggle.',6):s('Cook the protein',`Add ${m}. Cook 3–4 minutes, stirring gently, until just set. Take it off the heat while still slightly glossy because it keeps cooking.`,4),
+      s('Season and serve',`Season with salt and pepper${h?' and add '+h:''}. Serve straight away.`)]}
+  else if(has(/muffin|crumble|cake|banana bread|focaccia|baked pears/)){
+    const pre=has(/muffin/)?`Whisk the wet ingredients (${L(D)}) together, then fold into the dry ones (${g}) with the vegetables just until combined. Divide between the cups of a lined muffin tin.`
+      :has(/crumble/)?'Slice the apples into 1 cm pieces and toss with a little sugar. Spread in a baking dish. Rub the butter into the oats until it looks like coarse crumbs and scatter over the fruit.'
+      :has(/pears/)?'Halve and core the pears and set them cut side up in a baking dish. Fill the hollows with walnuts, drizzle with honey and dust with cinnamon.'
+      :has(/focaccia/)?`Stir the flour with 1 teaspoon salt and 1 teaspoon yeast, then mix in warm water (about 60% of the flour weight) and half the oil to a sticky dough. Cover and rest 30 minutes, then press into an oiled tin, dimple with your fingers and top with rosemary and the rest of the oil.`
+      :`Whisk the wet ingredients (${L(D)}${I.some(x=>x.n=='banana')?', mashed banana':''}), then fold into the flour until just combined with no dry streaks. Pour into a lined tin and smooth the top.`;
+    const foc=has(/focaccia/);
+    st=[s('Preheat',`Heat the oven to ${foc?'220 °C (425 °F)':'180 °C (350 °F)'} and line or grease your tin or dish.`,10),s('Prepare',pre),s('Bake',`Bake ${foc?'20–25':t} minutes until ${has(/crumble|pears/)?'the fruit is tender and the top is bubbling and golden':'golden and a toothpick comes out clean'}.`,foc?22:t),s('Cool and serve','Cool at least 10 minutes before serving; it sets as it cools.',10)];tp=['Ovens vary, so start checking 5 minutes before the time is up.']}
+  else if(has(/naan/)){
+    st=[s('Make the dough',`Mix ${g} and ${L(D.filter(x=>/yogurt/.test(x.n)))} with ½ teaspoon salt and 1 teaspoon baking powder. Knead 3 minutes until smooth.`,3),s('Rest','Cover and rest 15 minutes.',15),s('Roll','Divide into portions and roll each about 5 mm thick.'),s('Cook','Heat a dry skillet over medium-high heat. Cook each naan 1–2 minutes per side until puffed and charred in spots.',4),s('Finish',`Brush with melted butter and ${Q(I.find(x=>x.n=='garlic'))}, finely minced, and serve warm.`)]}
+  else if(has(/mousse|pudding|energy/)){
+    st=has(/energy/)?[s('Mix','Pit the dates if needed and mash with a fork into a sticky paste. Stir in the oats, peanut butter and cocoa until evenly combined.'),s('Roll','Wet your hands and roll into about 12 balls (2 cm).'),s('Chill','Chill 20 minutes to firm up.',20),s('Store','Keep in the fridge up to a week.')]
+    :has(/mousse/)?[s('Melt the chocolate','Chop the chocolate and melt it gently in a bowl over simmering water (or microwave in 20-second bursts, stirring).',3),s('Whip the cream','Whip the cream with the sugar to soft peaks.',3),s('Fold','Let the chocolate cool slightly, then fold in a third of the cream to loosen it, then fold in the rest until no streaks remain.'),s('Chill','Spoon into glasses and chill at least 2 hours.',120)]
+    :[s('Simmer the rice',`Combine ${Q(rice)} and ${L(D)} in a pot with a pinch of salt. Bring to a gentle simmer over medium-low heat.`,5),s('Cook','Simmer 25–30 minutes, stirring often so it does not stick, until thick and creamy.',28),s('Flavour',`Stir in the sugar and vanilla. Taste for sweetness.`),s('Serve','Serve warm, or chill for a firmer set; it thickens as it cools.')]}
+  else if(has(/deviled/)){
+    st=[s('Boil the eggs',`Lower ${Q(eg)} into boiling water and cook 10 minutes.`,10),s('Cool','Move to a bowl of ice water for 5 minutes, then peel.',5),s('Make the filling','Halve the eggs, scoop out the yolks and mash with the mustard and a pinch of salt.'),s('Fill and serve','Spoon the yolk mixture back into the whites and dust with paprika.')]}
+  else if(has(/burger|falafel/)){
+    const bg=has(/burger/);
+    st=[s('Make the mixture',`Drain and rinse ${Q(G[0])} and mash roughly with a fork, leaving some texture. Mix in ${L(I.filter(x=>x!==G[0]&&x.a!='B'))} and ½ teaspoon salt.`),s('Shape',`Form into ${bg?'patties':'about 12 small balls'} with wet hands, then chill 10 minutes so they hold together.`,10),s('Preheat','Heat the air fryer to 190 °C (375 °F) for 3 minutes.',3),s('Cook',`Brush lightly with oil and air-fry 10–14 minutes, ${bg?'flipping':'shaking the basket'} halfway, until crisp and golden.`,12),s('Serve',bg?'Toast the bun, add the patty and your favourite toppings.':'Serve warm with a yogurt or lemon dip.')]}
+  else if(has(/wrap|taco|burrito/)){
+    const prot=meat?`Season ${m} with salt and pepper. Heat 1 tablespoon oil in a skillet over medium-high heat and cook 6–8 minutes, ${has(/taco/)?'breaking it up as it browns':'turning once'}, ${done}.`:eg?`Beat ${Q(eg)} with a pinch of salt and scramble in a lightly oiled pan over medium-low heat 2–3 minutes until just set.`:`Warm ${m} in a pan.`;
+    st=[s('Cook the filling',prot,8),s('Prep the toppings',`${V.length?'Slice or dice '+L(V)+'. ':''}${G.length?'Warm '+L(G)+' in a small pan 2 minutes. ':''}${D.filter(x=>x!==eg).length?'Grate or crumble '+L(D.filter(x=>x!==eg))+'.':''}`),s('Warm the tortillas','Warm each tortilla in a dry pan or the microwave 20–30 seconds so it folds without cracking.'),s('Assemble','Layer the filling and toppings down the centre, fold in the sides and roll up tightly.'),...(E=='a'?[s('Crisp it up','Air-fry the burrito seam-side down at 190 °C (375 °F) for 4 minutes until golden.',4)]:[]),s('Serve','Slice in half and serve warm.')]}
+  else if(r.cat=='S'){
+    const liq=Math.round(300*n/50)*50+' ml';
+    st=E=='c'?[s('Prep',`Chop ${vs} and drain and rinse the beans.`),s('Load the cooker',`Add ${all.replace(/, [^,]*pasta/,'')} with ${liq} water or stock, 1 teaspoon salt and herbs.`),s('Cook','Cover and cook on Low 6–8 hours (High 3–4 hours).',360),s('Add the pasta',`Stir in ${Q(I.find(x=>x.n=='pasta'))} for the last 20 minutes.`,20),s('Finish','Taste, adjust the seasoning and serve hot.')]
+    :has(/miso/)?[s('Heat the broth',`Bring ${liq} water to a gentle simmer (do not boil).`,5),s('Add the tofu and seaweed',`Add ${Q(I.find(x=>x.n=='tofu'))}, cut in cubes, and the seaweed. Simmer 2 minutes.`,2),s('Add the miso',`Whisk ${Q(I.find(x=>x.n=='miso'))} with a ladle of hot broth in a bowl until smooth, then stir back into the pot off the heat.`),s('Serve','Top with sliced scallion and serve right away.')]
+    :[s('Prep',`Chop ${vs} into even small pieces.`),s('Sauté the aromatics','Heat 1 tablespoon olive oil in a pot over medium heat. Cook the onion (and carrot or celery) 5 minutes until soft.',5),s('Simmer',`Add the rest (${all}) with ${liq} water or stock and a pinch of salt. Bring to a boil, then simmer, partly covered, 20–25 minutes until everything is tender.`,23),s('Finish',has(/tomato|pumpkin|lentil/)?'Blend with an immersion blender until smooth (or roughly for lentil soup), then taste and season.':'Taste and adjust the seasoning.'),s('Serve','Ladle into warm bowls and finish with a drizzle of olive oil.')]}
+  else if(r.cat=='L'){
+    st=[...grain,...(E=='o'?[s('Roast the vegetables',`Heat the oven to 220 °C (425 °F). Toss ${vs} with 1 tablespoon oil, salt and pepper on a baking sheet and roast 20–25 minutes, turning once, until browned.`,25)]:[]),
+      s('Prep',`Drain and rinse any canned beans, chickpeas or tuna. Wash and cut ${E=='o'?'the remaining vegetables':vs} into bite-size pieces${h?' and chop '+h:''}.`),
+      s('Make the dressing','Whisk 1 tablespoon olive oil with the juice of ½ lemon (or a splash of vinegar), a pinch of salt and pepper.'),
+      s('Toss','Combine everything in a large bowl with the dressing and toss until evenly coated.'),s('Rest and serve','Let it sit 5 minutes so the flavours mingle, then taste and adjust.',5)]}
+  else if(has(/bruschetta/)){
+    st=[s('Toast the bread',`Heat the oven to 200 °C (400 °F). Slice ${Q(I.find(x=>x.n=='bread'))} and bake 5–6 minutes until crisp.`,6),s('Make the topping',`Dice ${vs}, chop the basil and mix with 1 teaspoon olive oil and a pinch of salt.`),s('Rub and top','Rub the warm toast with a cut garlic clove, then spoon on the topping.'),s('Serve','Serve immediately so the bread stays crisp.')]}
+  else if(has(/stuffed mushrooms/)){
+    st=[s('Preheat','Heat the oven to 200 °C (400 °F).',10),s('Prep the mushrooms','Twist out the stems and finely chop them. Wipe the caps clean.'),s('Make the filling',`Mix the chopped stems with ${L(I.filter(x=>/bread|parmesan|garlic/.test(x.n)))} and 1 tablespoon olive oil.`),s('Stuff and bake','Fill the caps, set them on a baking tray and bake 20 minutes until golden and tender.',20),s('Serve','Cool 2 minutes and serve warm.')]}
+  else if(has(/roasted chickpeas/)){
+    st=[s('Dry the chickpeas',`Drain and rinse ${Q(G[0])}, then pat completely dry on a towel. Dry chickpeas turn crisp.`),s('Season','Toss with the oil, paprika and ½ teaspoon salt on a baking tray.'),s('Roast','Roast at 200 °C (400 °F) for 25–30 minutes, shaking the tray every 10 minutes, until crunchy.',28),s('Cool','Cool 5 minutes; they crisp up further as they cool.',5)]}
+  else if(E=='o'){
+    st=[...grain,...(has(/tikka/)?[s('Marinate',`Stir ${m} with ${L(D)} and a pinch of salt. Leave 15 minutes (up to 4 hours in the fridge).`,15)]:[]),s('Preheat',`Heat the oven to ${pr?'220 °C (425 °F)':'200 °C (400 °F)'} with a baking sheet inside.`,10),s('Prep',`Cut ${vs} into even 3 cm pieces and toss with 1 tablespoon olive oil, salt and pepper.`),
+      s('Roast the vegetables',`Spread on the hot sheet in one layer so they brown instead of steam. Roast ${pr?'12':'20–25'} minutes${pr?'':', turning once, until golden and tender'}.`,pr?12:22),
+      ...(pr?[s('Add the protein',`Pat ${m} dry, season and nestle it among the vegetables. Roast 12–15 minutes ${done}.`,14),s('Rest and finish',`Rest 3 minutes, then finish with ${h||'a squeeze of lemon'}${rice?' and serve over the '+rice.n:''}.`,3)]:[s('Serve','Season to taste and serve warm.')])];tp=['Do not crowd the pan. Use two trays if needed so the food roasts rather than steams.']}
+  else if(E=='a'){
+    st=[s('Preheat','Heat the air fryer to 200 °C (400 °F) for 3 minutes.',3),s('Prep',`Cut ${vs} into 2–3 cm pieces and toss with 1 teaspoon olive oil, salt and pepper. Pat ${m} dry and season well.`),s('Cook the vegetables','Air-fry the vegetables 8 minutes, shaking the basket halfway.',8),s('Add the protein',`Add ${m} to the basket in a single layer. Air-fry 14–18 minutes, flipping halfway, ${done}.`,16),s('Rest','Rest 3 minutes before serving so the juices settle.',3)];tp=['Do not overfill the basket; hot air needs room to circulate for crisp results.']}
+  else if(E=='i'){
+    st=[...grain,s('Sauté','Press Sauté. Heat 1 tablespoon oil and cook the chopped onion 4 minutes until soft.',4),s('Add everything',`Add ${L(I.filter(x=>!/rice|spinach|onion/.test(x.n)))} with 100 ml water, 1 teaspoon salt and spices such as 2 teaspoons curry powder. Scrape the bottom so nothing sticks.`),s('Pressure cook','Seal the lid, set the valve to Sealing and cook on High Pressure 10 minutes.',10),s('Release','Let the pressure release naturally 10 minutes, then release the rest.',10),s('Finish',`Stir in the spinach until wilted, taste and adjust the salt. Serve over the ${rice?rice.n:'rice'}.`)]}
+  else if(E=='c'){
+    st=[s('Prep','Chop the onion and drain and rinse the beans.'),s('Brown (optional)',`Brown ${m} in a skillet 5 minutes, breaking it up. This adds flavour but is optional.`,5),s('Load the cooker',`Add ${all} with 100 ml water, 1 teaspoon salt, 1 teaspoon cumin and 1 teaspoon paprika.`),s('Cook','Cover and cook on Low 6–8 hours (or High 3–4 hours).',360),s('Finish','Stir, taste and adjust the seasoning. Serve hot.')]}
+  else if(has(/pasta/)){
+    st=[s('Boil the water','Bring a large pot of water to a boil and salt it generously.',8),s('Cook the pasta',`Add ${g} and cook 9–11 minutes, stirring now and then, until al dente. Scoop out ½ cup of the cooking water, then drain.`,10),s('Make the sauce',`While the pasta cooks, heat 1 tablespoon olive oil over medium heat. Add ${h?h+' for 30 seconds, then ':''}${vs} and cook 5–6 minutes until tender${pr?'. Add '+m+' and cook 3–4 minutes '+done:''}.`,6),s('Combine','Add the drained pasta to the pan with a splash of the cooking water and toss 1 minute until glossy.'),s('Finish',`Off the heat, stir in ${L(D)||'a drizzle of olive oil'}, season and serve hot.`)];tp=['Save a cup of pasta water; its starch helps the sauce cling.']}
+  else if(has(/stir-fry/)){
+    st=[...grain,s('Prep',`Cut ${vs} into bite-size pieces.${/tofu/.test(M.n)?' Press the tofu between paper towels 10 minutes, then cube it.':''}`,/tofu/.test(M.n)?10:0),s('Sear the protein',`Heat 1 tablespoon oil in a wok or large skillet over high heat. Add ${m} in a single layer and cook about 6 minutes, turning, until golden. Remove to a plate.`,6),s('Stir-fry the vegetables',`Add a little more oil and ${vs}. Stir-fry 4–5 minutes until crisp-tender.`,5),s('Combine',`Return the ${M.n}, add ${L(O)||'a splash of soy sauce'} and toss 1 minute until glossy.`),s('Serve',`Serve over the ${rice?rice.n:'rice'}.`)]}
+  else if(has(/risotto/)){
+    st=[s('Warm the stock',`Heat ${n*350} ml water or stock in a small pot and keep at a bare simmer.`,5),s('Soften the aromatics',`Heat 1 tablespoon olive oil in a wide pan over medium heat. Add ${L(V)} and cook 5–6 minutes until soft.`,6),s('Toast the rice',`Stir in ${Q(rice)} and cook 2 minutes until the edges turn translucent.`,2),s('Add the stock','Add stock one ladle at a time, stirring often and waiting until each is mostly absorbed. Continue 18–20 minutes until creamy with a slight bite.',20),s('Finish',`Off the heat, stir in ${L(D)}. Cover and rest 2 minutes, then season and serve.`,2)]}
+  else if(!E){
+    st=[s('Wash and cut',`Wash and cut ${V.length?vs:'the produce'} into bite-size pieces.`),s('Arrange','Arrange on a plate or board with dips, crackers or cheese in separate piles.'),s('Serve',`Serve with ${h||'a drizzle of olive oil'}.`)]}
+  else{
+    st=[s('Prep',`Measure ${all}. Cut the vegetables into even, bite-size pieces so they cook at the same speed.`),s('Heat the pan','Warm 1 tablespoon olive oil in a large skillet or pot over medium heat until it shimmers.',2),s('Cook',`Add ${V.length?L(V):m} and cook, stirring often, 5–8 minutes until tender and lightly browned at the edges.`,7),s('Finish',`Stir in ${h||'a pinch of salt and pepper'}, taste and adjust. Serve warm.`)]}
+  return{steps:st,tips:tp}}
+function plate(r,z=190){let a=r.id*9301+49297;const rn=()=>(a=a*16807%2147483647)/2147483647;let b='';
+  for(let i=0;i<7;i++){const x=72+rn()*56,y=72+rn()*56;b+=`<ellipse cx="${x}" cy="${y}" rx="${14+rn()*18}" ry="${10+rn()*14}" transform="rotate(${rn()*180} ${x} ${y})" fill="hsl(${r.h+(rn()-.5)*55} 62% ${42+rn()*26}%)"/>`}
+  for(let i=0;i<10;i++)b+=`<circle cx="${62+rn()*76}" cy="${62+rn()*76}" r="${2+rn()*3}" fill="hsl(${100+rn()*40} 55% ${34+rn()*22}%)"/>`;
+  return`<svg viewBox="0 0 200 200" width="${z}" height="${z}" aria-hidden="true" style="flex:none"><circle cx="100" cy="104" r="94" fill="#000" opacity=".14"/><circle cx="100" cy="100" r="94" fill="#fff"/><circle cx="100" cy="100" r="78" fill="hsl(${r.h} 25% 95%)" stroke="rgba(0,0,0,.07)"/>${b}</svg>`}
+
+let S={diet:'any',al:[],eq:['s','o','m'],have:['olive oil'],kcal:2000,hh:1,plan:null,day:(new Date().getDay()+6)%7,view:'today',ob:0,hide:false};
+let UI=null,T=null;
+try{const j=localStorage.getItem('wp3');if(j)S=Object.assign(S,JSON.parse(j))}catch(e){}
+const save=()=>{try{localStorage.setItem('wp3',JSON.stringify(S))}catch(e){}};
+const dok={any:()=>1,pesc:t=>t!='m',veg:t=>t=='g'||t=='v',vegan:t=>t=='v'};
+const ok=r=>dok[S.diet](r.dt)&&!r.al.some(a=>S.al.includes(a))&&r.eq.every(e=>S.eq.includes(e));
+const pool=i=>CAT.filter(r=>ok(r)&&(i==0?r.cat=='B':i==1?'SL'.includes(r.cat)||(r.cat=='M'&&r.k<=560):r.cat=='M'));
+const SPL=[.25,.35,.4],port=()=>S.hh;
+const rng=a=>()=>(a=a*16807%2147483647)/2147483647;
+function rank(i,skip){const rn=rng(Date.now()%1e6+7),used=new Set(),cnt={};
+  S.plan.forEach(d=>d.forEach(m=>{if(m){cnt[m.id]=(cnt[m.id]||0)+1;CAT[m.id].i.forEach(x=>used.add(x.n))}}));
+  const t=S.kcal*SPL[i];
+  return pool(i).filter(r=>r.id!=skip).map(r=>[-Math.abs(r.k-t)/t*3+r.i.filter(x=>used.has(x.n)).length*.35+r.i.filter(x=>S.have.includes(x.n)).length*.3-(cnt[r.id]||0)*2+r.p*.01+rn()*.8,r]).sort((a,b)=>b[0]-a[0]).map(x=>x[1])}
+function gen(days){if(!S.plan)S.plan=Array.from({length:7},()=>[null,null,null]);
+  days.forEach(d=>[0,1,2].forEach(i=>{const q=S.plan[d][i];if(!(q&&q.lk&&ok(CAT[q.id])))S.plan[d][i]=null}));
+  days.forEach(d=>[0,1,2].forEach(i=>{if(S.plan[d][i])return;const r=rank(i)[0];S.plan[d][i]=r?{id:r.id,s:port(r,i),lk:0}:null}));save()}
+const dayT=d=>S.plan[d].reduce((a,m)=>{if(m){const r=CAT[m.id],n=nut(r);a.k+=r.k;a.p+=r.p;a.f+=n.f;a.fi+=n.fi}return a},{k:0,p:0,f:0,fi:0});
+const tg=()=>({k:S.kcal,p:Math.round(S.kcal*.2/4),f:Math.round(S.kcal*.33/9),fi:Math.round(S.kcal/1000*14)});
+const mon=(()=>{const d=new Date();d.setDate(d.getDate()-(d.getDay()+6)%7);return d})(),dt=d=>new Date(mon.getTime()+d*864e5);
+const fmt=(q,u)=>u=='pc'?Math.ceil(q-1e-6)+' pc':q>=1000?(q/1000).toFixed(1)+' kg':Math.ceil(q/5)*5+' g';
+const tog=(a,v)=>a.includes(v)?a.filter(x=>x!=v):[...a,v];
+const bar=(l,v,t,u)=>`<div class="tile"><div class="mu">${l}</div><div class="num">${Math.round(v)}<span class="mu"> / ${t}${u}</span></div><div class="bar" role="img" aria-label="${l} ${Math.round(clamp(v/t,0,1)*100)}% of target"><b style="width:${clamp(v/t*100,0,100)}%"></b></div></div>`;
+const at=(d,i)=>`data-d="${d}" data-i="${i}"`;
+
+function meal(d,i){const m=S.plan[d][i];if(!m)return`<div class="mc"><p class="sl">${SLN[i]}</p><p class="mu">No recipe fits your filters. Add equipment or relax your diet in Kitchen.</p></div>`;
+  const r=CAT[m.id];return`<article class="mc${m.lk?' lk':''}" style="--h:${r.h}"><button class="pw" data-a="open" ${at(d,i)} aria-label="Open ${r.t}">${plate(r)}</button><p class="sl">${SLN[i]} · ${r.m} min${r.eq.length?' · '+EQ[r.eq[0]]:''}</p><h3>${r.t}</h3><p class="mu">${r.k} kcal · ${r.p} g protein per person</p><p class="mu">Cooking for ${m.s} ${m.s>1?'people':'person'}</p><div class="ac"><button class="b2" data-a="bw" ${at(d,i)}>Swap</button><button class="b2" data-a="lock" aria-pressed="${!!m.lk}" ${at(d,i)}>${m.lk?'🔒 Locked':'Lock'}</button></div></article>`}
+function today(){const d=S.day,t=dayT(d),g=tg(),C=2*Math.PI*52;
+  return`<div class="tp"><div><p class="mu" style="margin-top:8px">${dt(d).toLocaleDateString('en',{weekday:'long',month:'long',day:'numeric'})}</p><h1 class="big">Today’s plate</h1></div><button class="b1" data-a="regen">Rebuild my week</button></div>
+  <div class="days" role="group" aria-label="Choose a day">${[0,1,2,3,4,5,6].map(x=>`<button class="dp" aria-pressed="${x==d}" data-a="day" data-d="${x}">${dt(x).toLocaleDateString('en',{weekday:'short'})}<b>${dt(x).getDate()}</b></button>`).join('')}</div>
+  <div class="bento"><div class="tile ring"><svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="${Math.round(t.k)} of ${g.k} calories"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--chip)" stroke-width="12"/><circle cx="60" cy="60" r="52" fill="none" stroke="var(--ac)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${clamp(t.k/g.k,0,1)*C} ${C}" transform="rotate(-90 60 60)"/></svg><div><div class="num" style="font-size:2.6rem;font-weight:800">${Math.round(t.k)}</div><p class="mu">of ${g.k} kcal planned</p></div></div>${bar('Protein',t.p,g.p,' g')}${bar('Fiber',t.fi,g.fi,' g')}${bar('Fat',t.f,g.f,' g')}</div>
+  <div class="meals">${[0,1,2].map(i=>meal(d,i)).join('')}</div><p class="mu" style="margin-top:18px">Nutrition is per person. Values are sample estimates in this preview. Locked meals stay when you rebuild.</p>`}
+function week(){const g=tg();let a=0;for(let d=0;d<7;d++)a+=dayT(d).k/7;
+  return`<h1 class="big" style="margin-top:8px">Your week</h1><p class="mu">Averaging ${Math.round(a)} of ${g.k} kcal a day.</p><p style="margin:14px 0"><button class="b1" data-a="regen">Rebuild my week</button></p>
+  <div class="wk">${S.plan.map((row,d)=>`<button class="wd" data-a="day" data-d="${d}" data-go="1"><h3>${dt(d).toLocaleDateString('en',{weekday:'long'})}</h3><div class="row3">${row.map(m=>m?plate(CAT[m.id],64):'').join('')}</div><p class="mu">${Math.round(dayT(d).k)} kcal · ${Math.round(dayT(d).p)} g protein</p></button>`).join('')}</div>`}
+function shopList(){const m={};S.plan.forEach(d=>d.forEach(p=>{if(!p)return;CAT[p.id].i.forEach(x=>{const q=qty(x),e=m[x.n]=m[x.n]||{n:x.n,a:x.a,u:q[1],q:0};e.q+=q[0]*p.s})}));return Object.values(m).sort((a,b)=>a.n.localeCompare(b.n))}
+function shop(){const L=shopList(),need=L.filter(i=>!S.have.includes(i.n)).length;
+  return`<h1 class="big" style="margin-top:8px">Shopping</h1><p class="mu">${need} to buy · ${L.length-need} already at home</p><div class="chips" style="margin:14px 0"><button class="chip" aria-pressed="${S.hide}" data-a="hide">Hide items I have</button><button class="b1" data-a="copy" id="cp">Copy list</button></div><div style="max-width:620px">`+
+  Object.keys(AISLE).map(k=>{const l=L.filter(i=>i.a==k&&!(S.hide&&S.have.includes(i.n)));return l.length?`<h3 style="margin:24px 0 4px">${AISLE[k]}</h3>`+l.map(i=>{const h=S.have.includes(i.n);return`<label class="row${h?' on':''}"><input type="checkbox" data-a="have" data-n="${i.n}" ${h?'checked':''}><span>${i.n}</span><em>${amt(i.q,i.u)}</em></label>`}).join(''):''}).join('')+`</div><p class="mu" style="margin-top:20px">Tick what you already own. It is struck through and remembered.</p>`}
+const ch=(k,v,l,on)=>`<button class="chip" aria-pressed="${on}" data-a="tog" data-k="${k}" data-v="${v}">${l}</button>`;
+function kitBody(){return`<h3>How do you eat?</h3><div class="chips">${Object.keys(DIET).map(v=>ch('diet',v,DIET[v],S.diet==v)).join('')}</div><h3>Allergies (always excluded)</h3><div class="chips">${Object.keys(AG).map(v=>ch('al',v,AG[v],S.al.includes(v))).join('')}</div>`}
+function eqBody(){return`<h3>What kitchen equipment do you have?</h3><div class="chips">${Object.keys(EQ).map(v=>ch('eq',v,EQ[v],S.eq.includes(v))).join('')}</div><h3>What’s already in your pantry?</h3><div class="chips">${PANTRY.map(v=>ch('have',v,v,S.have.includes(v))).join('')}</div>`}
+function numBody(){return`<h3>Calories a day</h3><input type="number" id="kc" min="1200" max="4000" step="50" value="${S.kcal}" aria-label="Calories a day"><p class="mu" style="margin-top:6px">Between 1,200 and 4,000. Not medical advice.</p><h3>People eating</h3><div class="step"><button data-a="hh" data-v="-1" aria-label="Fewer people">−</button><b>${S.hh}</b><button data-a="hh" data-v="1" aria-label="More people">+</button></div>`}
+function onboard(){const t=['What do you eat?','What’s in your kitchen?','How much, and for whom?'][S.ob];
+  return`<div class="ob"><div class="dots">${[0,1,2].map(i=>`<i class="${i<=S.ob?'on':''}"></i>`).join('')}</div><h2>${t}</h2>${[kitBody,eqBody,numBody][S.ob]()}<div class="chips" style="margin-top:34px">${S.ob?'<button class="chip" data-a="obp">Back</button>':''}${S.ob<2?'<button class="b1" data-a="obn">Continue</button>':'<button class="b1" data-a="build">Build my week</button>'}</div></div>`}
+function kit(){return`<div class="ob" style="padding-top:8px"><h2>Your kitchen</h2>${kitBody()}${eqBody()}${numBody()}<p style="margin-top:34px"><button class="b1" data-a="build">Rebuild my week</button></p></div>`}
+
+const mm=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+function bwRes(){const q=UI.q.toLowerCase(),l=CAT.filter(r=>(UI.cat=='All'||r.cat==UI.cat)&&r.t.toLowerCase().includes(q)&&(!UI.fit||ok(r)));
+  $('#bres').innerHTML=`<p class="mu">${l.length} recipes</p><div class="gr">`+l.slice(0,UI.n).map(r=>`<button class="mc sm" style="--h:${r.h}" data-a="pick" data-id="${r.id}">${plate(r,84)}<span><b>${r.t}</b><small>${r.k} kcal · ${r.p} g protein · ${r.m} min</small></span></button>`).join('')+`</div>`+(l.length>UI.n?'<p class="c"><button class="b2" data-a="more">Show more</button></p>':'')}
+function sheet(){const o=$('#ov');
+  if(!UI){o.className='ov';o.innerHTML='';document.body.style.overflow='';return}
+  document.body.style.overflow='hidden';o.className='ov open';let h='',cls='sh';
+  if(UI.t=='bw'){cls+=' full';h=`<div class="hd"><h2 style="flex:1">Swap ${SLN[UI.i].toLowerCase()}</h2><button class="b2" data-a="quick">Suggest one for me</button><button class="b1" data-a="close">Close</button></div><input type="search" id="bq" style="width:100%" aria-label="Search recipes" placeholder="Search any dish: soup, pasta, dessert…" value="${UI.q}"><div class="chips" style="margin:12px 0">${['All',...Object.keys(CN)].map(c=>`<button class="chip" aria-pressed="${UI.cat==c}" data-a="cat" data-c="${c}">${c=='All'?'All':CN[c]}</button>`).join('')}<button class="chip" aria-pressed="${UI.fit}" data-a="fit">Fits my kitchen</button></div><div id="bres"></div>`}
+  else{const m=S.plan[UI.d][UI.i],r=CAT[m.id],n=nut(r),H=how(r,m.s),s=H.steps;
+    if(UI.t=='rec')h=`<div class="hd" style="--h:${r.h}"><div class="mc" style="padding:8px;border-radius:50%">${plate(r,110)}</div><div style="flex:1"><h2>${r.t}</h2><p class="mu">${r.m} min · ${r.eq.length?r.eq.map(e=>EQ[e]).join(', '):'no cooking equipment'}</p></div><button class="b2" data-a="close">Close</button></div>
+    <div class="chips" role="group" aria-label="Cooking for" style="align-items:center"><span class="mu">Cooking for</span>${[1,2,3,4].map(k=>`<button class="chip" aria-pressed="${m.s==k}" data-a="ppl" data-v="${k}">${k} ${k>1?'people':'person'}</button>`).join('')}</div>
+    <div class="nut"><div><b>${r.k}</b>kcal</div><div><b>${r.p}</b>protein g</div><div><b>${n.c}</b>carbs g</div><div><b>${n.f}</b>fat g</div><div><b>${n.fi}</b>fiber g</div></div><p class="mu">Nutrition per person. Sample estimates for this preview.${r.al.length?' Contains: '+r.al.map(a=>AG[a].toLowerCase()).join(', ')+'.':''}</p>
+    <p><button class="b1" data-a="cook">Start cooking</button></p><h3 style="margin:20px 0 4px">Before you start</h3><p class="mu">You need: ${r.eq.length?r.eq.map(e=>EQ[e]).join(', ')+', plus a knife and cutting board':'a knife, cutting board and a pan or bowl'}. From the pantry: salt, pepper and olive oil. Total time about ${r.m} minutes.</p><h3 style="margin:20px 0 4px">Ingredients for ${m.s} ${m.s>1?'people':'person'}</h3>${r.i.map(x=>{const q=qty(x);return`<div class="row"><span>${x.n}${S.have.includes(x.n)?' (have)':''}</span><em>${amt(q[0]*m.s,q[1])}</em></div>`}).join('')}<h3 style="margin:22px 0 10px">Method</h3><ol class="ms">${s.map(x=>`<li><b>${x.t}</b>${x.m?` <span class="mu">· ${x.m>=60?x.m/60+' h':x.m+' min'}</span>`:''}<br>${x.x}</li>`).join('')}</ol><h3 style="margin:18px 0 6px">Tips</h3><ul>${H.tips.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+    else{const z=s[UI.st];cls+=' cook';h=`<div class="hd"><p class="mu" style="flex:1">${r.t} · step ${UI.st+1} of ${s.length}</p><button class="b2" data-a="close">Exit</button></div><div class="bar"><b style="width:${(UI.st+1)/s.length*100}%"></b></div><div class="tx"><small class="mu" style="display:block;font-size:1rem">${z.t}</small>${z.x}</div>${z.m?`<div class="tm" id="tm" aria-live="polite">${T?mm(T.left):mm(z.m*60)}</div><p><button class="b2" data-a="timer" data-v="${z.m}">${T?'Restart timer':'Start timer'}</button></p>`:''}<h3 style="margin:20px 0 4px">Ingredients</h3>${r.i.map(x=>`<label class="row"><input type="checkbox"><span>${x.n}</span><em>${amt(qty(x)[0]*m.s,qty(x)[1])}</em></label>`).join('')}<div class="chips" style="margin-top:22px"><button class="chip" data-a="st" data-v="-1" ${UI.st?'':'disabled'}>Back</button>${UI.st<s.length-1?'<button class="b1" data-a="st" data-v="1">Next step</button>':'<button class="b1" data-a="close">Finish</button>'}</div>`}}
+  o.innerHTML=`<div class="${cls}" role="dialog" aria-modal="true" aria-label="Recipe">${h}</div>`;if(UI.t=='bw')bwRes()}
+function render(){
+  const ob=!S.plan;$('#nav').style.display=ob?'none':'flex';
+  $('#nav').innerHTML=[['today','Today'],['week','Week'],['shop','Shopping'],['kit','Kitchen']].map(a=>`<button data-a="view" data-v="${a[0]}" ${S.view==a[0]?'aria-current="page"':''}>${a[1]}</button>`).join('');
+  $('#app').innerHTML=ob?onboard():S.view=='today'?today():S.view=='week'?week():S.view=='shop'?shop():kit();sheet()}
+let tt;function toast(x){const e=$('#toast');e.textContent=x;e.className='on';clearTimeout(tt);tt=setTimeout(()=>e.className='',2200)}
+function stopT(){if(T){clearInterval(T.iv);T=null}}
+const A={
+  view:e=>{S.view=e.v;save()},day:e=>{S.day=+e.d;if(e.go)S.view='today';save()},
+  tog:e=>{if(e.k=='diet')S.diet=e.v;else S[e.k]=tog(S[e.k],e.v);save()},hh:e=>{S.hh=clamp(S.hh+ +e.v,1,4);save()},
+  obn:()=>{S.ob++},obp:()=>{S.ob--},
+  build:()=>{gen([0,1,2,3,4,5,6]);S.view='today';scrollTo(0,0);toast('Week rebuilt. Locked meals stayed put.')},regen:()=>{gen([0,1,2,3,4,5,6]);toast('Week rebuilt. Locked meals stayed put.')},
+  lock:e=>{const m=S.plan[+e.d][+e.i];m.lk=m.lk?0:1;save();toast(m.lk?'Locked. It stays when you rebuild the week.':'Unlocked.')},
+  open:e=>{UI={t:'rec',d:+e.d,i:+e.i}},bw:e=>{UI={t:'bw',d:+e.d,i:+e.i,cat:SC[+e.i],q:'',n:24,fit:true}},
+  close:()=>{stopT();UI=null},ppl:e=>{S.plan[UI.d][UI.i].s=+e.v;save()},
+  cook:()=>{stopT();UI={t:'cook',d:UI.d,i:UI.i,st:0};try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(x){}},
+  st:e=>{stopT();UI.st+=+e.v},
+  timer:e=>{stopT();T={left:+e.v*60,iv:setInterval(()=>{T.left--;const el=$('#tm');if(el)el.textContent=T.left>0?mm(T.left):'Time’s up';if(T.left<=0){clearInterval(T.iv);try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(x){}}},1000)}},
+  cat:e=>{UI.cat=e.c;UI.n=24},fit:()=>{UI.fit=!UI.fit;UI.n=24},more:()=>{UI.n+=24},
+  pick:e=>{const r=CAT[+e.id];S.plan[UI.d][UI.i]={id:r.id,s:port(r,UI.i),lk:0};save();UI=null},
+  quick:()=>{const r=rank(UI.i,S.plan[UI.d][UI.i]&&S.plan[UI.d][UI.i].id)[0];if(r)S.plan[UI.d][UI.i]={id:r.id,s:port(r,UI.i),lk:0};save();UI=null},
+  have:e=>{S.have=tog(S.have,e.n);save()},hide:()=>{S.hide=!S.hide;save()},
+  copy:()=>{const t=shopList().filter(i=>!S.have.includes(i.n)).map(i=>'☐ '+i.n+' – '+amt(i.q,i.u)).join('\n');
+    try{navigator.clipboard.writeText(t).catch(()=>{})}catch(x){}render();$('#cp').textContent='Copied'}};
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t||(t.tagName=='INPUT'&&e.target!==t))return;
+  A[t.dataset.a](t.dataset);if(t.dataset.a!='copy')render()});
+document.addEventListener('input',e=>{if(e.target.id=='bq'&&UI){UI.q=e.target.value;UI.n=24;bwRes()}});
+document.addEventListener('change',e=>{if(e.target.id=='kc'){S.kcal=clamp(Math.round(+e.target.value||2000),1200,4000);e.target.value=S.kcal;save()}});
+document.addEventListener('keydown',e=>{if(e.key=='Escape'&&UI){stopT();UI=null;render()}});
+if(S.plan)gen([]);
+render();
+</script>
+</body>
+</html>
