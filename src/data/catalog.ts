@@ -1,3 +1,4 @@
+import { stepsForDish, stepsLookGeneric } from "@/data/cook-steps";
 export type Aisle = "Produce" | "Proteins" | "Pantry" | "Dairy" | "Frozen" | "Bakery";
 export type DietTag = "m" | "f" | "g" | "v";
 
@@ -437,20 +438,14 @@ export function ingredientAmount(name: string, people: number) {
 }
 
 export function method(r: Recipe, people: number): { title: string; body: string; minutes: number }[] {
-  const written = r.steps?.length
-    ? r.steps
-    : [
-        {
-          title: "Ingredients",
-          body: `Use the amounts for ${people === 1 ? "one person" : `${people} people`}. ${r.ingredients.map((i) => i.name).join(", ")}.`,
-          minutes: 2,
-        },
-        {
-          title: "Cook",
-          body: `Cook ${r.title} the way that dish is usually cooked. Give it about ${r.minutes} minutes.`,
-          minutes: r.minutes,
-        },
-      ];
+  const written =
+    r.steps?.length && !stepsLookGeneric(r.steps)
+      ? r.steps
+      : stepsForDish(
+          r.title,
+          r.ingredients.map((item) => item.name),
+          r.minutes,
+        );
   return written.map((item) => ({
     ...item,
     body: item.body.replaceAll("{people}", String(people)),

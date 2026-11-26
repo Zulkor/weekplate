@@ -1,6 +1,7 @@
 import { RECIPES, type Ingredient, type Recipe } from "@/data/catalog";
 import { EXTRA_MEALS } from "@/data/extra-meals";
 import { EXTRA_BREAKFAST } from "@/data/extra-breakfast";
+import { cleanName, splitInstructions, stepsForDish, stepsLookGeneric } from "@/data/cook-steps";
 import { fetchDish, fetchDishBatch, fetchFoodPage } from "@/lib/food-page";
 
 const byId = new Map<string, Recipe>(RECIPES.map((r) => [r.id, r]));
@@ -110,14 +111,7 @@ export function fromMeal(meal: Meal): Recipe | null {
     if (name) ingredients.push({ name, aisle: aisle(name), measure: measure || undefined });
   }
   const cat = catOf(meal);
-  const chunks = (meal.strInstructions ?? "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 20)
-    .slice(0, 8);
-  const steps = chunks.length
-    ? chunks.map((body, i) => ({ title: `Step ${i + 1}`, body, minutes: i === 0 ? 5 : 8 }))
-    : undefined;
+  const steps = splitInstructions(meal.strInstructions ?? "");
   return {
     id: `meal-${meal.idMeal}`,
     cat,
@@ -131,7 +125,7 @@ export function fromMeal(meal: Meal): Recipe | null {
     minutes: 30,
     photo: meal.strMealThumb,
     serves: 2,
-    steps,
+    steps: steps.length ? steps : stepsForDish(meal.strMeal, ingredients.map((item) => item.name), 30),
   };
 }
 
@@ -257,7 +251,7 @@ function dishFromCard(card: { id: string; title: string; photo: string }): Recip
     protein: 24,
     minutes: 35,
     photo: card.photo,
-    steps: [{ title: "Cook", body: `Cook ${card.title} for {people}. Open the recipe again if the ingredient list is still loading.`, minutes: 20 }],
+    steps: stepsForDish(card.title, [card.title], 35),
   };
 }
 
@@ -358,33 +352,37 @@ export async function categoryFeed(category: string) {
 export async function hydrateMeal(id: string) {
   if (id.startsWith("fork-")) {
     const existing = recipeById(id);
-    if (existing && existing.ingredients.length > 1) return existing;
+    if (existing && existing.ingredients.length > 1 && !stepsLookGeneric(existing.steps)) return existing;
     const detail = await fetchDish({ data: id.replace(/^fork-/, "") }).catch(() => null);
-    if (!detail) return existing;
+    if (!detail) {
+      if (existing && stepsLookGeneric(existing.steps)) {
+        const patched: Recipe = {
+          ...existing,
+          steps: stepsForDish(existing.title, existing.ingredients.map((item) => cleanName(item.name)), existing.minutes),
+        };
+        byId.set(patched.id, patched);
+        return patched;
+      }
+      return existing;
+    }
+    const ingredientLines = detail.ingredients.map((line) => cleanName(line));
     const full: Recipe = {
       ...(existing ?? dishFromCard(detail)),
       title: detail.title,
       photo: detail.photo,
       minutes: detail.minutes,
       serves: detail.servings || 4,
-      ingredients: detail.ingredients.map((line) => ({
+      ingredients: ingredientLines.map((line) => ({
         name: line.replace(/^[\d½¼¾/.\s-]+/, "").replace(/^(cups?|tablespoons?|teaspoons?|tbsp|tsp|g|kg|ml|oz)\s+/i, "").trim() || line,
         aisle: aisle(line),
         measure: line,
       })),
       allergens: allergensOf(detail.ingredients),
-      steps: [
-        {
-          title: "Amounts",
-          body: `Use the published amounts below. They are written for ${detail.servings || 4} and change when you change how many people eat.`,
-          minutes: 2,
-        },
-        {
-          title: "Cook",
-          body: `Cook ${detail.title} with those ingredients. Plan about ${detail.minutes} minutes.`,
-          minutes: Math.max(5, detail.minutes - 2),
-        },
-      ],
+      steps: stepsForDish(
+        detail.title,
+        ingredientLines,
+        detail.minutes,
+      ),
     };
     byId.set(full.id, full);
     return full;
