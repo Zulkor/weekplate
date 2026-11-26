@@ -39,7 +39,10 @@ export function remember(list: Recipe[]) {
   let added = 0;
   for (const recipe of list) {
     if (!recipe.title || !recipe.photo) continue;
-    if (!byId.has(recipe.id)) {
+    const prev = byId.get(recipe.id);
+    if (prev && prev.ingredients.length > 1 && recipe.ingredients.length <= 1) continue;
+    if (prev && prev.cat === "B" && recipe.cat !== "B" && prev.ingredients.length >= recipe.ingredients.length) continue;
+    if (!prev) {
       added += 1;
       if (recipe.id.startsWith("off-")) offList.push(recipe);
     }
@@ -327,14 +330,29 @@ export async function categoryNames() {
 }
 
 export async function categoryFeed(category: string) {
+  const name = category.toLowerCase();
+  const local = dishes().filter((recipe) => {
+    if (name === "breakfast") return recipe.cat === "B";
+    if (name === "dessert") return recipe.cat === "D";
+    if (name === "starter" || name === "side") return recipe.cat === "S" || recipe.cat === "L" || recipe.cat === "K";
+    if (name === "vegetarian") return recipe.diet === "g" || recipe.diet === "v";
+    if (name === "vegan") return recipe.diet === "v";
+    if (name === "seafood") return recipe.diet === "f" || /fish|salmon|shrimp|prawn|tuna|cod/.test(recipe.title.toLowerCase());
+    return recipe.cat === "M" && recipe.title.toLowerCase().includes(name.replace(/s$/, ""));
+  });
   const data = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?c=${encodeURIComponent(category)}`)
     .then((res) => res.json() as Promise<{ meals: Meal[] | null }>)
     .catch(() => ({ meals: null }));
-  const recipes = (data.meals ?? [])
+  const remote = (data.meals ?? [])
     .map((meal) => fromMeal({ ...meal, strCategory: category, strInstructions: "" }))
     .filter((recipe): recipe is Recipe => !!recipe);
-  remember(recipes);
-  return recipes;
+  remember(remote);
+  const seen = new Set<string>();
+  return [...local, ...remote].filter((recipe) => {
+    if (seen.has(recipe.id)) return false;
+    seen.add(recipe.id);
+    return true;
+  });
 }
 
 export async function hydrateMeal(id: string) {

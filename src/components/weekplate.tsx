@@ -553,7 +553,13 @@ function Library() {
   return (
     <div>
       <h1 className="font-display text-4xl sm:text-5xl">Library</h1>
-      <p className="mt-2 text-muted">Scroll a category, search live foods, and save the ones you like.</p>
+      <p className="mt-2 text-muted">
+        {category === "All" && query.trim().length < 2
+          ? `${allFoods.length} dishes ready. Scroll, search, or open Breakfast.`
+          : searching
+            ? "Loading…"
+            : `${list.length} in ${category}`}
+      </p>
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -1469,7 +1475,9 @@ function SwapSheet({
             <X className="size-4" />
           </button>
         </div>
-        <p className="mt-1 text-sm text-muted">Pick a category and scroll the feed, or search by name.</p>
+        <p className="mt-1 text-sm text-muted">
+          {searching ? "Loading…" : `${list.length} ${SLOT_LABEL[slot].toLowerCase()} dishes`}
+        </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {categories.map((name) => (
             <button
