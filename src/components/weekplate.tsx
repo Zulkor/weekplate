@@ -29,7 +29,7 @@ import {
 import { categoryFeed, categoryNames, dishes, hydrateMeal, loadDishes, loadMealCatalog, onRecipes, recipeById, recipeCount, searchLive } from "@/data/live";
 import { fits, useKitchen, baseDayKcal, dayFloor, favoriteFrom, mealServings, platesFor, portionScale, weekFloor, type Goal, type Sex, type View } from "@/state/kitchen";
 import { cn } from "@/lib/cn";
-import { newShareCode, pullShare, pullShareIfNewer, pushShare, rememberShareCode, SHARE_KEY, shareIsQuiet, shareLink } from "@/state/share";
+import { newShareCode, publishKitchen, rememberShareCode, SHARE_KEY, shareLink, startKitchenSync } from "@/state/share";
 
 function monday() {
   const d = new Date();
@@ -137,49 +137,20 @@ export function WeekPlate() {
     shareRef.current = code;
     setShareCode(code);
 
-    let updatedAt = "";
-    let timer = 0;
-    const unsub = useKitchen.subscribe(() => {
-      const active = shareRef.current;
-      if (!active || shareIsQuiet()) return;
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        pushShare(active).then((at) => {
-          if (at) updatedAt = at;
-        });
-      }, 800);
-    });
+    let stopSync = () => {};
+    if (code) stopSync = startKitchenSync(code);
 
     const boot = async () => {
-      if (code) {
-        const at = await pullShare(code).catch(() => "");
-        if (at) updatedAt = at;
-        else await pushShare(code);
-        useKitchen.getState().set({ view: "today", onboarded: true });
-        return;
-      }
       const state = useKitchen.getState();
       const empty = state.plan.every((day) => day.every((slot) => !slot));
-      if (empty) state.build();
+      if (!code && empty) state.build();
       else state.set({ view: "today", onboarded: true });
     };
     void boot();
 
-    const poll = window.setInterval(() => {
-      const active = shareRef.current;
-      if (!active || document.hidden) return;
-      pullShareIfNewer(active, updatedAt)
-        .then((at) => {
-          updatedAt = at;
-        })
-        .catch(() => undefined);
-    }, 5000);
-
     return () => {
       stopCatalog();
-      unsub();
-      window.clearTimeout(timer);
-      window.clearInterval(poll);
+      stopSync();
     };
   }, []);
 
@@ -219,7 +190,7 @@ export function WeekPlate() {
                   () => flash("Link copied."),
                   () => flash("Copy the link in the box and send it."),
                 );
-                void pushShare(code);
+                void publishKitchen(code);
               }}
             >
               <Share2 className="size-4" />
