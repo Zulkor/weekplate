@@ -343,6 +343,45 @@ const STEPS: Record<string, { title: string; body: string; minutes: number }[]> 
   ],
 };
 
+const PHOTOS: Record<string, string> = {
+  "Blueberry oat pancakes": "https://www.themealdb.com/images/media/meals/c400ok1764439058.jpg",
+  "Avocado & egg toast": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/18/Avocado_toast_at_the_girl_%26_the_fig_-_Sarah_Stierch.jpg/500px-Avocado_toast_at_the_girl_%26_the_fig_-_Sarah_Stierch.jpg",
+  Shakshuka: "https://www.themealdb.com/images/media/meals/g373701551450225.jpg",
+  "Greek yogurt parfait": "https://live.staticflickr.com/4123/4903134042_994963dd3e.jpg",
+  "Veggie egg muffins": "https://live.staticflickr.com/4133/5175926936_9e621b4c9b_b.jpg",
+  "Overnight oats": "https://live.staticflickr.com/5560/15207378706_f457163cda.jpg",
+  "Tofu scramble": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/20/Tacopocalypse_Vegan_Tofu_Scramble%2C_Des_Moines%2C_Iowa_%2824301627930%29.jpg/500px-Tacopocalypse_Vegan_Tofu_Scramble%2C_Des_Moines%2C_Iowa_%2824301627930%29.jpg",
+  "Green smoothie": "https://live.staticflickr.com/8405/8761977445_9ab7b6f4f8_b.jpg",
+  "Air-fryer breakfast burrito": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/77/Bacon_Kale_Breakfast_Burrito_%288429773809%29.jpg/500px-Bacon_Kale_Breakfast_Burrito_%288429773809%29.jpg",
+  "Tomato basil soup": "https://www.themealdb.com/images/media/meals/stpuws1511191310.jpg",
+  "Red lentil soup": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ee/Bowl_of_lentil_soup_with_green_and_red_lentils.jpg/500px-Bowl_of_lentil_soup_with_green_and_red_lentils.jpg",
+  "Chicken noodle soup": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b3/Chicken_Noodle_Soup.jpg/500px-Chicken_Noodle_Soup.jpg",
+  "Miso soup with tofu": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e8/Miso_Soup_001.jpg/500px-Miso_Soup_001.jpg",
+  "Pumpkin soup": "https://www.themealdb.com/images/media/meals/1brbso1763585098.jpg",
+  "Chickpea salad bowl": "https://live.staticflickr.com/5248/5366445507_dcafcee662_b.jpg",
+  "Greek salad with feta": "https://live.staticflickr.com/7231/7206018248_06d9c21b18_b.jpg",
+  "Tuna & white bean salad": "https://www.themealdb.com/images/media/meals/yypwwq1511304979.jpg",
+  "Quinoa & roasted veg": "https://live.staticflickr.com/1815/44040185371_ef1d25ae62_b.jpg",
+  "Chicken Caesar wrap": "https://live.staticflickr.com/4102/4782004194_560afe4229.jpg",
+  "Caprese salad": "https://live.staticflickr.com/3245/3042662667_bc51f47029_b.jpg",
+  "Sheet-pan salmon & sweet potato": "https://live.staticflickr.com/3820/8807705542_596457f027_m.jpg",
+  "Air-fryer chicken thighs": "https://live.staticflickr.com/5482/11348618374_8a7cbf98aa_b.jpg",
+  "Instant Pot chickpea curry": "https://www.themealdb.com/images/media/meals/sywrsu1511463066.jpg",
+  "Tofu & broccoli stir-fry": "https://www.themealdb.com/images/media/meals/minfsc1763766806.jpg",
+  "Slow-cooker turkey chili": "https://www.themealdb.com/images/media/meals/uwxqwy1483389553.jpg",
+  "Pasta primavera": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/dd/Pasta_primavera.jpg/500px-Pasta_primavera.jpg",
+  "Baked cod with roasted veg": "https://live.staticflickr.com/3772/9894235923_53a3bb11b2_b.jpg",
+  "Beef tacos": "https://live.staticflickr.com/5517/12525671195_2f47b4811c_b.jpg",
+  "Mushroom risotto": "https://live.staticflickr.com/2794/4335679494_5e8b806eca_b.jpg",
+  "Chicken tikka bowl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/Chicken_Tikka_Masala_KellySue.JPG/500px-Chicken_Tikka_Masala_KellySue.JPG",
+  "Shrimp garlic pasta": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/38/Shrimp_and_basil_pesto_pasta_1.jpg/500px-Shrimp_and_basil_pesto_pasta_1.jpg",
+  "Black bean burgers": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/05/Fancy_Veggie_Burger_and_Fries_-_Joe%27s_Burger_House_2024-07-07.jpg/500px-Fancy_Veggie_Burger_and_Fries_-_Joe%27s_Burger_House_2024-07-07.jpg",
+  "Chocolate mousse": "https://www.themealdb.com/images/media/meals/uttuxy1511382180.jpg",
+  "Apple crumble": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6f/British_apple_crumble_02.jpg/500px-British_apple_crumble_02.jpg",
+  "Hummus & veg plate": "https://www.themealdb.com/images/media/meals/gpon5u1763801180.jpg",
+  "Energy bites": "https://live.staticflickr.com/4149/5223552600_298e768160_b.jpg",
+};
+
 export const RECIPES: Recipe[] = raw.map((r, id) => ({
   ...r,
   id: `local-${id}`,
@@ -352,6 +391,7 @@ export const RECIPES: Recipe[] = raw.map((r, id) => ({
     return spec ? { ...item, qty: spec[0], unit: spec[1] } : item;
   }),
   steps: STEPS[r.title],
+  photo: PHOTOS[r.title] ?? r.photo,
 }));
 
 function prettyCount(q: number) {
