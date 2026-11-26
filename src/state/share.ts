@@ -17,8 +17,15 @@ export function rememberShareCode(code: string) {
   window.history.replaceState({}, "", url);
 }
 
+const PUBLIC_APP = "https://weekplate-mu.vercel.app";
+
 export function shareLink(code: string) {
-  const url = new URL(window.location.href);
+  const here = typeof window === "undefined" ? new URL(PUBLIC_APP) : new URL(window.location.href);
+  const host = here.hostname;
+  const onPublished = host === "weekplate-mu.vercel.app" || host.endsWith(".vercel.app");
+  const url = new URL(onPublished ? here.origin : PUBLIC_APP);
+  url.pathname = "/";
+  url.search = "";
   url.searchParams.set("k", code);
   return url.toString();
 }

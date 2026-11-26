@@ -97,7 +97,8 @@ export function fromMeal(meal: Meal): Recipe | null {
   const ingredients: Ingredient[] = [];
   for (let i = 1; i <= 20; i += 1) {
     const name = meal[`strIngredient${i}`]?.trim();
-    if (name) ingredients.push({ name, aisle: aisle(name) });
+    const measure = meal[`strMeasure${i}`]?.trim();
+    if (name) ingredients.push({ name, aisle: aisle(name), measure: measure || undefined });
   }
   const cat = catOf(meal);
   const chunks = (meal.strInstructions ?? "")
@@ -120,6 +121,7 @@ export function fromMeal(meal: Meal): Recipe | null {
     protein: cat === "M" ? 34 : cat === "B" ? 18 : 16,
     minutes: 30,
     photo: meal.strMealThumb,
+    serves: 2,
     steps,
   };
 }
@@ -340,18 +342,23 @@ export async function hydrateMeal(id: string) {
       title: detail.title,
       photo: detail.photo,
       minutes: detail.minutes,
-      ingredients: detail.ingredients.map((name) => ({ name, aisle: aisle(name) })),
+      serves: detail.servings || 4,
+      ingredients: detail.ingredients.map((line) => ({
+        name: line.replace(/^[\d½¼¾/.\s-]+/, "").replace(/^(cups?|tablespoons?|teaspoons?|tbsp|tsp|g|kg|ml|oz)\s+/i, "").trim() || line,
+        aisle: aisle(line),
+        measure: line,
+      })),
       allergens: allergensOf(detail.ingredients),
       steps: [
         {
-          title: "Prep",
-          body: `For {people}, set out ${detail.ingredients.slice(0, 6).join(", ") || detail.title}.`,
-          minutes: 8,
+          title: "Amounts",
+          body: `Use the published amounts below. They are written for ${detail.servings || 4} and change when you change how many people eat.`,
+          minutes: 2,
         },
         {
           title: "Cook",
-          body: `Cook ${detail.title} until done. Plan about ${detail.minutes} minutes. The original recipe serves ${detail.servings}.`,
-          minutes: Math.max(5, detail.minutes - 8),
+          body: `Cook ${detail.title} with those ingredients. Plan about ${detail.minutes} minutes.`,
+          minutes: Math.max(5, detail.minutes - 2),
         },
       ],
     };

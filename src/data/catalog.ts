@@ -1,7 +1,7 @@
 export type Aisle = "Produce" | "Proteins" | "Pantry" | "Dairy" | "Frozen" | "Bakery";
 export type DietTag = "m" | "f" | "g" | "v";
 
-export type Ingredient = { name: string; aisle: Aisle };
+export type Ingredient = { name: string; aisle: Aisle; qty?: number; unit?: string; measure?: string };
 
 export type Recipe = {
   id: string;
@@ -15,6 +15,7 @@ export type Recipe = {
   protein: number;
   minutes: number;
   photo: string;
+  serves?: number;
   steps?: { title: string; body: string; minutes: number }[];
 };
 
@@ -99,8 +100,6 @@ const raw: Omit<Recipe, "id">[] = [
   { cat: "K", title: "Energy bites", diet: "v", eq: [], allergens: ["n"], ingredients: [{ name: "oats", aisle: "Pantry" }, { name: "dates", aisle: "Pantry" }, { name: "peanut butter", aisle: "Pantry" }, { name: "cocoa", aisle: "Pantry" }], kcal: 200, protein: 6, minutes: 10, photo: p("photo-1495147466023-ac5c588e2e94") },
 ];
 
-export const RECIPES: Recipe[] = raw.map((r, id) => ({ ...r, id: `local-${id}` }));
-
 export function macros(r: Recipe) {
   const fat = Math.round((r.kcal * 0.32) / 9);
   const carbs = Math.max(0, Math.round((r.kcal - r.protein * 4 - fat * 9) / 4));
@@ -109,52 +108,311 @@ export function macros(r: Recipe) {
 }
 
 const QTY: Record<string, [number, string]> = {
-  eggs: [2, "pc"],
-  lemon: [1, "pc"],
-  onion: [1, "pc"],
-  avocado: [1, "pc"],
+  eggs: [1, "pc"],
+  lemon: [0.5, "pc"],
+  onion: [0.5, "pc"],
+  avocado: [0.5, "pc"],
   banana: [1, "pc"],
-  "bell pepper": [1, "pc"],
-  tortillas: [2, "pc"],
+  "bell pepper": [0.5, "pc"],
+  tortillas: [1, "pc"],
   sourdough: [2, "slice"],
   pita: [1, "pc"],
   buns: [1, "pc"],
-  garlic: [2, "clove"],
+  garlic: [1, "clove"],
 };
 
+const AMOUNTS: Record<string, Record<string, [number, string]>> = {
+  "Blueberry oat pancakes": { oats: [45, "g"], blueberries: [60, "g"], eggs: [1, "pc"], milk: [100, "ml"] },
+  "Avocado & egg toast": { sourdough: [2, "slice"], avocado: [0.5, "pc"], eggs: [1, "pc"], lemon: [0.25, "pc"] },
+  Shakshuka: { eggs: [2, "pc"], tomatoes: [200, "g"], "bell pepper": [0.5, "pc"], onion: [0.5, "pc"] },
+  "Greek yogurt parfait": { "Greek yogurt": [170, "g"], granola: [30, "g"], berries: [80, "g"], honey: [1, "tsp"] },
+  "Veggie egg muffins": { eggs: [2, "pc"], spinach: [40, "g"], "bell pepper": [0.5, "pc"], feta: [30, "g"] },
+  "Overnight oats": { oats: [50, "g"], "oat milk": [150, "ml"], chia: [1, "tbsp"], berries: [60, "g"] },
+  "Tofu scramble": { tofu: [120, "g"], spinach: [40, "g"], tomatoes: [80, "g"], onion: [0.25, "pc"] },
+  "Green smoothie": { spinach: [30, "g"], banana: [1, "pc"], "protein powder": [25, "g"], "oat milk": [200, "ml"] },
+  "Air-fryer breakfast burrito": { tortillas: [1, "pc"], eggs: [2, "pc"], "black beans": [80, "g"], cheddar: [30, "g"] },
+  "Tomato basil soup": { tomatoes: [250, "g"], onion: [0.5, "pc"], basil: [5, "g"], cream: [40, "ml"] },
+  "Red lentil soup": { "red lentils": [80, "g"], carrot: [1, "pc"], onion: [0.5, "pc"], tomatoes: [150, "g"] },
+  "Chicken noodle soup": { chicken: [120, "g"], noodles: [60, "g"], carrot: [1, "pc"], celery: [1, "pc"] },
+  "Miso soup with tofu": { miso: [1, "tbsp"], tofu: [80, "g"], scallions: [1, "pc"], seaweed: [2, "g"] },
+  "Pumpkin soup": { pumpkin: [200, "g"], onion: [0.5, "pc"], "coconut milk": [80, "ml"], ginger: [5, "g"] },
+  "Chickpea salad bowl": { chickpeas: [120, "g"], cucumber: [0.5, "pc"], tomatoes: [100, "g"], lemon: [0.5, "pc"] },
+  "Greek salad with feta": { cucumber: [0.5, "pc"], tomatoes: [150, "g"], feta: [40, "g"], olives: [30, "g"] },
+  "Tuna & white bean salad": { tuna: [80, "g"], "white beans": [80, "g"], cucumber: [0.5, "pc"], lemon: [0.5, "pc"] },
+  "Quinoa & roasted veg": { quinoa: [60, "g"], zucchini: [0.5, "pc"], "bell pepper": [0.5, "pc"], lemon: [0.5, "pc"] },
+  "Chicken Caesar wrap": { chicken: [120, "g"], tortillas: [1, "pc"], romaine: [60, "g"], parmesan: [15, "g"] },
+  "Caprese salad": { tomatoes: [150, "g"], mozzarella: [80, "g"], basil: [5, "g"], "olive oil": [1, "tbsp"] },
+  "Sheet-pan salmon & sweet potato": { salmon: [150, "g"], broccoli: [150, "g"], "sweet potato": [200, "g"], lemon: [0.5, "pc"] },
+  "Air-fryer chicken thighs": { "chicken thighs": [180, "g"], broccoli: [150, "g"], "sweet potato": [150, "g"], "olive oil": [1, "tbsp"] },
+  "Instant Pot chickpea curry": { chickpeas: [120, "g"], tomatoes: [150, "g"], "coconut milk": [100, "ml"], rice: [60, "g"] },
+  "Tofu & broccoli stir-fry": { tofu: [150, "g"], broccoli: [150, "g"], rice: [60, "g"], "soy sauce": [1, "tbsp"] },
+  "Slow-cooker turkey chili": { turkey: [140, "g"], "black beans": [80, "g"], tomatoes: [150, "g"], onion: [0.5, "pc"] },
+  "Pasta primavera": { pasta: [80, "g"], broccoli: [100, "g"], tomatoes: [100, "g"], parmesan: [15, "g"] },
+  "Baked cod with roasted veg": { cod: [150, "g"], broccoli: [150, "g"], "sweet potato": [150, "g"], lemon: [0.5, "pc"] },
+  "Beef tacos": { beef: [120, "g"], tortillas: [2, "pc"], tomatoes: [80, "g"], onion: [0.25, "pc"] },
+  "Mushroom risotto": { "arborio rice": [70, "g"], mushrooms: [100, "g"], onion: [0.5, "pc"], parmesan: [20, "g"] },
+  "Chicken tikka bowl": { chicken: [150, "g"], yogurt: [40, "g"], rice: [60, "g"], cucumber: [0.5, "pc"] },
+  "Shrimp garlic pasta": { shrimp: [140, "g"], pasta: [80, "g"], garlic: [2, "clove"], parsley: [5, "g"] },
+  "Black bean burgers": { "black beans": [120, "g"], oats: [30, "g"], onion: [0.25, "pc"], buns: [1, "pc"] },
+  "Chocolate mousse": { "dark chocolate": [40, "g"], cream: [80, "ml"], sugar: [10, "g"] },
+  "Apple crumble": { apples: [150, "g"], oats: [30, "g"], butter: [15, "g"], sugar: [15, "g"] },
+  "Hummus & veg plate": { hummus: [80, "g"], carrot: [1, "pc"], cucumber: [0.5, "pc"], pita: [1, "pc"] },
+  "Energy bites": { oats: [30, "g"], dates: [30, "g"], "peanut butter": [15, "g"], cocoa: [5, "g"] },
+};
+
+const step = (title: string, body: string, minutes: number) => ({ title, body, minutes });
+
+const STEPS: Record<string, { title: string; body: string; minutes: number }[]> = {
+  "Blueberry oat pancakes": [
+    step("Mix", "Whisk the egg and milk. Stir in the oats and a pinch of salt. Rest 5 minutes so the oats soften, then fold in most of the blueberries.", 5),
+    step("Cook", "Oil a nonstick pan over medium heat. Spoon in small pancakes. When the surface looks set, flip and cook until golden.", 12),
+    step("Serve", "Stack the pancakes and scatter the remaining blueberries on top. These are breakfast pancakes, not a savoury pan dish.", 2),
+  ],
+  "Avocado & egg toast": [
+    step("Toast", "Toast the sourdough until the edges are crisp.", 3),
+    step("Egg", "Fry or poach the egg in a little oil until the white is set and the yolk is still soft.", 4),
+    step("Assemble", "Crush the avocado on the toast with lemon and salt. Set the egg on top and finish with pepper.", 2),
+  ],
+  Shakshuka: [
+    step("Sauce", "Soften the onion and pepper in olive oil. Add the tomatoes, salt, and a pinch of pepper. Simmer until thick.", 12),
+    step("Eggs", "Make wells in the sauce and crack in the eggs. Cover and cook until the whites set.", 8),
+    step("Serve", "Spoon straight from the pan. The eggs should still have a soft yolk.", 1),
+  ],
+  "Greek yogurt parfait": [
+    step("Layer", "Spoon yogurt into a bowl, then granola, then berries.", 2),
+    step("Finish", "Repeat the layers and drizzle the honey. Eat it cold. No cooking.", 1),
+  ],
+  "Veggie egg muffins": [
+    step("Mix", "Beat the eggs with salt. Stir in chopped spinach, pepper, and crumbled feta.", 5),
+    step("Bake", "Pour into a greased muffin tin. Bake at 180 °C until just set in the middle.", 18),
+    step("Cool", "Rest 2 minutes, then lift them out. They should be set, not wet.", 2),
+  ],
+  "Overnight oats": [
+    step("Stir", "Mix the oats, oat milk, and chia in a jar with a pinch of salt.", 2),
+    step("Chill", "Cover and leave in the fridge overnight, or at least 2 hours.", 1),
+    step("Top", "Stir, then add the berries. The oats should be soft, not dry.", 1),
+  ],
+  "Tofu scramble": [
+    step("Crumble", "Mash the tofu in a pan with a little oil so it looks like scramble.", 3),
+    step("Veg", "Add onion, tomatoes, and spinach. Cook until the spinach wilts and the tofu is hot.", 8),
+    step("Season", "Salt and pepper in the pan. Serve it hot.", 1),
+  ],
+  "Green smoothie": [
+    step("Blend", "Blend spinach, banana, protein powder, and oat milk until smooth.", 2),
+    step("Check", "Add a splash more milk if it will not spin. Drink it cold.", 1),
+  ],
+  "Air-fryer breakfast burrito": [
+    step("Fill", "Scramble the eggs. Warm the beans. Roll both into the tortilla with the cheddar.", 8),
+    step("Air fry", "Air fry at 180 °C until the tortilla is spotted and the cheese has melted.", 8),
+    step("Serve", "Cut in half so the filling stays inside.", 1),
+  ],
+  "Tomato basil soup": [
+    step("Soften", "Cook the onion in olive oil until soft.", 6),
+    step("Simmer", "Add the tomatoes, salt, and most of the basil. Simmer until the tomatoes collapse, then blend.", 18),
+    step("Finish", "Stir in the cream off the heat. Top with the rest of the basil.", 2),
+  ],
+  "Red lentil soup": [
+    step("Soften", "Cook the onion and carrot in oil for a few minutes.", 6),
+    step("Simmer", "Add the lentils, tomatoes, and water to cover. Simmer until the lentils are soft.", 25),
+    step("Finish", "Salt it. Mash a few lentils against the side of the pot if you want it thicker.", 2),
+  ],
+  "Chicken noodle soup": [
+    step("Broth", "Simmer the chicken, carrot, and celery in salted water until the chicken is cooked through.", 20),
+    step("Noodles", "Take the chicken out, shred it, and return it. Add the noodles and cook until tender.", 10),
+    step("Serve", "Taste the broth for salt. The noodles should be soft, not chalky.", 1),
+  ],
+  "Miso soup with tofu": [
+    step("Heat", "Heat water until steaming, not boiling hard.", 5),
+    step("Dissolve", "Take it off the heat. Whisk in the miso. Add the tofu and seaweed.", 3),
+    step("Finish", "Top with scallions. Do not boil it after the miso goes in.", 1),
+  ],
+  "Pumpkin soup": [
+    step("Soften", "Cook the onion and ginger in oil.", 5),
+    step("Simmer", "Add the pumpkin and water to cover. Simmer until the pumpkin is soft, then blend.", 20),
+    step("Finish", "Stir in the coconut milk and salt. It should be smooth.", 2),
+  ],
+  "Chickpea salad bowl": [
+    step("Chop", "Cut the cucumber and tomatoes. Drain the chickpeas.", 6),
+    step("Dress", "Toss with lemon, olive oil, and salt.", 2),
+    step("Serve", "Eat it cold. Nothing here needs a pan.", 1),
+  ],
+  "Greek salad with feta": [
+    step("Chop", "Cut the cucumber and tomatoes. Add the olives.", 6),
+    step("Dress", "Toss with olive oil, salt, and pepper.", 2),
+    step("Finish", "Put the feta on top in chunks. Do not cook it.", 1),
+  ],
+  "Tuna & white bean salad": [
+    step("Drain", "Drain the tuna and the beans.", 2),
+    step("Toss", "Mix with cucumber, lemon, olive oil, and salt.", 4),
+    step("Serve", "Cold. The lemon is the dressing.", 1),
+  ],
+  "Quinoa & roasted veg": [
+    step("Roast", "Toss the zucchini and pepper with oil and salt. Roast at 200 °C until browned.", 25),
+    step("Quinoa", "Simmer the quinoa in salted water until the tails uncurl, then drain.", 15),
+    step("Toss", "Mix the quinoa and vegetables with lemon.", 2),
+  ],
+  "Chicken Caesar wrap": [
+    step("Chicken", "Cook the chicken through in a pan, then slice it.", 10),
+    step("Fill", "Lay romaine, chicken, and parmesan on the tortilla. Add a little oil and pepper.", 3),
+    step("Roll", "Fold in the sides and roll it tight.", 1),
+  ],
+  "Caprese salad": [
+    step("Slice", "Slice the tomatoes and mozzarella.", 3),
+    step("Arrange", "Layer them with the basil.", 1),
+    step("Dress", "Olive oil, salt, and pepper. Serve at room temperature.", 1),
+  ],
+  "Sheet-pan salmon & sweet potato": [
+    step("Start the veg", "Cut the sweet potato. Roast at 200 °C with oil and salt for 15 minutes.", 15),
+    step("Add the rest", "Add the broccoli and the salmon. Season the fish with salt and lemon.", 15),
+    step("Check", "The salmon should flake. The potato should be soft in the middle.", 2),
+  ],
+  "Air-fryer chicken thighs": [
+    step("Season", "Salt the thighs and rub with a little oil.", 3),
+    step("Air fry", "Air fry at 190 °C, skin side down first if they have skin, until the juices run clear.", 22),
+    step("Veg", "Air fry the sweet potato and broccoli with oil until the potato is soft. Serve together.", 12),
+  ],
+  "Instant Pot chickpea curry": [
+    step("Sauté", "On Sauté, cook the spices you have with a spoon of oil, then add the tomatoes.", 5),
+    step("Pressure", "Add the chickpeas, coconut milk, and a pinch of salt. Pressure cook until the chickpeas are soft.", 18),
+    step("Rice", "Cook the rice separately in salted water. Serve the curry over it.", 12),
+  ],
+  "Tofu & broccoli stir-fry": [
+    step("Rice", "Start the rice in salted water.", 12),
+    step("Tofu", "Fry the tofu in a little oil until the edges brown. Set it aside.", 6),
+    step("Sauce", "Stir-fry the broccoli, add the tofu and soy sauce, and toss until the broccoli is bright and tender.", 6),
+  ],
+  "Slow-cooker turkey chili": [
+    step("Brown", "Brown the turkey with the onion in a pan.", 8),
+    step("Slow cook", "Put it in the slow cooker with the beans, tomatoes, and salt. Cook on Low until thick.", 1),
+    step("Serve", "Taste for salt. The beans should be soft.", 1),
+  ],
+  "Pasta primavera": [
+    step("Pasta", "Boil the pasta in salted water until just tender. Save a splash of the water.", 10),
+    step("Veg", "In a pan, cook the broccoli and tomatoes with a little oil until the broccoli is tender.", 8),
+    step("Toss", "Add the pasta, parmesan, and a splash of pasta water. Toss until glossy.", 2),
+  ],
+  "Baked cod with roasted veg": [
+    step("Veg", "Roast the sweet potato at 200 °C with oil and salt.", 15),
+    step("Fish", "Add the broccoli and the cod. Season the cod with salt and lemon.", 15),
+    step("Check", "The cod should flake and look opaque. The potato should be soft.", 1),
+  ],
+  "Beef tacos": [
+    step("Beef", "Cook the beef with the onion until no pink remains. Salt it.", 10),
+    step("Salsa", "Chop the tomatoes. Warm the tortillas in a dry pan.", 5),
+    step("Fill", "Spoon the beef into the tortillas and top with tomato.", 2),
+  ],
+  "Mushroom risotto": [
+    step("Mushrooms", "Brown the mushrooms in oil, then set them aside. Soften the onion in the same pan.", 8),
+    step("Rice", "Stir in the rice. Add hot water a ladle at a time, stirring, until the rice is tender with a little bite.", 25),
+    step("Finish", "Stir the mushrooms and parmesan back in. Salt and rest 1 minute.", 2),
+  ],
+  "Chicken tikka bowl": [
+    step("Marinate", "Coat the chicken in yogurt, salt, and whatever spice you have.", 5),
+    step("Cook", "Roast or pan-cook the chicken until it is cooked through. Cook the rice in salted water.", 20),
+    step("Bowl", "Serve the chicken on the rice with cucumber.", 2),
+  ],
+  "Shrimp garlic pasta": [
+    step("Pasta", "Boil the pasta in salted water until just tender.", 10),
+    step("Shrimp", "In a pan, cook the garlic in oil, then the shrimp until they turn pink.", 5),
+    step("Toss", "Add the pasta and parsley. Toss with a spoon of pasta water.", 2),
+  ],
+  "Black bean burgers": [
+    step("Mix", "Mash the beans with oats, grated onion, and salt until they hold together.", 6),
+    step("Cook", "Shape a patty and air fry or pan-fry until the outside is browned and the middle is hot.", 12),
+    step("Bun", "Toast the bun and put the patty in it.", 2),
+  ],
+  "Chocolate mousse": [
+    step("Melt", "Melt the chocolate gently. Whip the cream with the sugar until it holds soft peaks.", 6),
+    step("Fold", "Cool the chocolate a little, then fold it into the cream.", 2),
+    step("Chill", "Chill until it sets. This is a dessert, not a cooked dinner.", 1),
+  ],
+  "Apple crumble": [
+    step("Fruit", "Slice the apples into a dish with half the sugar.", 5),
+    step("Top", "Rub the oats, butter, and remaining sugar into a crumb. Scatter it over the apples.", 5),
+    step("Bake", "Bake at 180 °C until the apples are soft and the top is golden.", 30),
+  ],
+  "Hummus & veg plate": [
+    step("Cut", "Cut the carrot and cucumber into sticks.", 3),
+    step("Plate", "Put the hummus in a bowl and warm the pita if you want it soft.", 2),
+    step("Eat", "Dip the vegetables. Nothing else is cooked.", 1),
+  ],
+  "Energy bites": [
+    step("Mix", "Chop the dates. Mix them with oats, peanut butter, and cocoa until it holds.", 5),
+    step("Roll", "Roll small balls.", 3),
+    step("Chill", "Chill until firm. No baking.", 1),
+  ],
+};
+
+export const RECIPES: Recipe[] = raw.map((r, id) => ({
+  ...r,
+  id: `local-${id}`,
+  serves: 1,
+  ingredients: r.ingredients.map((item) => {
+    const spec = AMOUNTS[r.title]?.[item.name];
+    return spec ? { ...item, qty: spec[0], unit: spec[1] } : item;
+  }),
+  steps: STEPS[r.title],
+}));
+
+function prettyCount(q: number) {
+  const halves = Math.round(q * 2) / 2;
+  if (halves <= 0.25) return "a little";
+  if (halves === 0.5) return "1/2";
+  if (Number.isInteger(halves)) return String(halves);
+  return String(halves);
+}
+
+function scaleMeasure(measure: string, factor: number) {
+  if (Math.abs(factor - 1) < 0.05) return measure;
+  return measure.replace(/(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)/g, (token) => {
+    const bits = token.trim().split(/\s+/);
+    const value = bits.reduce((sum, bit) => {
+      const [a, b] = bit.split("/");
+      if (b) return sum + Number(a) / Number(b);
+      return sum + Number(a);
+    }, 0);
+    if (!Number.isFinite(value)) return token;
+    const next = value * factor;
+    return next >= 10 ? String(Math.round(next)) : String(Math.round(next * 10) / 10);
+  });
+}
+
+export function formatIngredient(ing: Ingredient, people: number, serves = 1) {
+  const factor = Math.max(1, people) / Math.max(1, serves);
+  if (ing.measure) return scaleMeasure(ing.measure, factor);
+  const known = QTY[ing.name];
+  const qty = ing.qty ?? known?.[0];
+  const unit = ing.unit ?? known?.[1];
+  if (qty == null || !unit) return "as written";
+  const q = qty * factor;
+  if (unit === "g" || unit === "ml") return `${Math.max(5, Math.round(q / 5) * 5)} ${unit}`;
+  if (unit === "tbsp" || unit === "tsp") return `${prettyCount(q)} ${unit}`;
+  if (unit === "slice") return `${prettyCount(q)} slices`;
+  if (unit === "clove") return `${prettyCount(q)} cloves`;
+  return prettyCount(q);
+}
+
 export function ingredientAmount(name: string, people: number) {
-  const base = QTY[name] ?? [120, "g"];
-  const q = base[0] * people;
-  if (base[1] === "g") return `${Math.max(10, Math.round(q / 10) * 10)} g`;
-  const count = Math.max(1, Math.round(q));
-  if (base[1] === "slice") return `${count} slices`;
-  if (base[1] === "clove") return `${count} cloves`;
-  return `${count}`;
+  return formatIngredient({ name, aisle: "Pantry" }, people, 1);
 }
 
 export function method(r: Recipe, people: number): { title: string; body: string; minutes: number }[] {
-  if (r.steps?.length) {
-    return r.steps.map((step) => ({
-      ...step,
-      body: step.body.replaceAll("{people}", String(people)),
-    }));
-  }
-  const names = r.ingredients.map((i) => i.name).join(", ");
-  const heat = r.eq.includes("a")
-    ? "Heat the air fryer to 200 °C."
-    : r.eq.includes("o")
-      ? "Heat the oven to 200 °C."
-      : r.eq.includes("i")
-        ? "Set the Instant Pot to Sauté and warm a spoon of oil."
-        : r.eq.includes("c")
-          ? "Set the slow cooker to Low."
-          : r.eq.includes("b")
-            ? "Set the blender jug on the base."
-            : "Warm a wide pan over medium heat with a spoon of olive oil.";
-  return [
-    { title: people === 1 ? "Set one place" : `Set the table for ${people}`, body: `You are cooking ${r.title} for ${people === 1 ? "one person" : `${people} people`}. Gather ${names}, plus salt and pepper.`, minutes: 2 },
-    { title: "Heat", body: heat, minutes: r.eq.length ? 3 : 0 },
-    { title: "Cook", body: `Cook until the main ingredient is done and the vegetables are tender. Season in the pan, not only at the table. Target time is about ${r.minutes} minutes.`, minutes: Math.max(5, r.minutes - 5) },
-    { title: "Plate", body: "Split onto warm plates. Finish with lemon, herbs, or a drizzle of oil if you have them. Taste once more.", minutes: 2 },
-  ];
+  const written = r.steps?.length
+    ? r.steps
+    : [
+        {
+          title: "Ingredients",
+          body: `Use the amounts for ${people === 1 ? "one person" : `${people} people`}. ${r.ingredients.map((i) => i.name).join(", ")}.`,
+          minutes: 2,
+        },
+        {
+          title: "Cook",
+          body: `Cook ${r.title} the way that dish is usually cooked. Give it about ${r.minutes} minutes.`,
+          minutes: r.minutes,
+        },
+      ];
+  return written.map((item) => ({
+    ...item,
+    body: item.body.replaceAll("{people}", String(people)),
+  }));
 }

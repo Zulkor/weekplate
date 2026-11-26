@@ -42,13 +42,17 @@ export const saveKitchen = createServerFn({ method: "POST" })
   .validator((input: { code: string; state: ShareBody }) => input)
   .handler(async ({ data }) => {
     if (!codeOk(data.code) || !data.state || typeof data.state !== "object") return { ok: false as const, updatedAt: "" };
-    const { getSql } = await import("@/lib/db");
-    const sql = await getSql();
-    const rows = await sql<{ updated_at: string }>`
-      insert into kitchens (code, state)
-      values (${data.code}, ${JSON.stringify(data.state)})
-      on conflict (code) do update set state = excluded.state, updated_at = now()
-      returning updated_at::text as updated_at
-    `;
-    return { ok: true as const, updatedAt: rows[0]?.updated_at ?? "" };
+    try {
+      const { getSql } = await import("@/lib/db");
+      const sql = await getSql();
+      const rows = await sql<{ updated_at: string }>`
+        insert into kitchens (code, state)
+        values (${data.code}, ${JSON.stringify(data.state)})
+        on conflict (code) do update set state = excluded.state, updated_at = now()
+        returning updated_at::text as updated_at
+      `;
+      return { ok: true as const, updatedAt: rows[0]?.updated_at ?? "" };
+    } catch {
+      return { ok: false as const, updatedAt: "" };
+    }
   });

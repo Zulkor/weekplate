@@ -21,13 +21,13 @@ import {
   EQUIPMENT,
   PANTRY,
   SLOT_LABEL,
-  ingredientAmount,
+  formatIngredient,
   macros,
   method,
   type Recipe,
 } from "@/data/catalog";
 import { categoryFeed, categoryNames, dishes, hydrateMeal, loadDishes, loadMealCatalog, onRecipes, recipeById, recipeCount, searchLive } from "@/data/live";
-import { fits, useKitchen, baseDayKcal, cookFactor, dayFloor, favoriteFrom, mealServings, platesFor, portionScale, weekFloor, type Goal, type Sex, type View } from "@/state/kitchen";
+import { fits, useKitchen, baseDayKcal, dayFloor, favoriteFrom, mealServings, platesFor, portionScale, weekFloor, type Goal, type Sex, type View } from "@/state/kitchen";
 import { cn } from "@/lib/cn";
 import { newShareCode, pullShare, pullShareIfNewer, pushShare, rememberShareCode, SHARE_KEY, shareIsQuiet, shareLink } from "@/state/share";
 
@@ -42,6 +42,22 @@ function dayDate(i: number) {
   const d = new Date(monday());
   d.setDate(d.getDate() + i);
   return d;
+}
+
+function recipeSplit(table: { id: string; name: string; kcal: number }[], kcal: number, people: number, serves = 1) {
+  const heads = Math.max(1, people);
+  const batch = Math.round(kcal * (heads / Math.max(1, serves)));
+  const eating = (table.length ? table : [{ id: "you", name: "You", kcal: 2000 }]).slice(0, heads);
+  const weights = eating.map((person) => Math.max(1, person.kcal));
+  const sum = weights.reduce((total, weight) => total + weight, 0);
+  return {
+    batch,
+    plates: eating.map((person, index) => ({
+      id: person.id,
+      name: person.name,
+      kcal: Math.round((batch * weights[index]) / sum),
+    })),
+  };
 }
 
 function scaledDay(plan: ReturnType<typeof useKitchen.getState>["plan"], day: number, floor: number) {
@@ -191,21 +207,19 @@ export function WeekPlate() {
             <button
               type="button"
               className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface px-4 text-sm font-medium"
-              onClick={async () => {
+              onClick={() => {
                 let code = shareRef.current || shareCode;
                 if (!/^[a-f0-9]{32}$/.test(code)) code = newShareCode();
                 shareRef.current = code;
                 rememberShareCode(code);
                 setShareCode(code);
-                await pushShare(code);
-                const link = shareLink(code);
-                try {
-                  await navigator.clipboard.writeText(link);
-                  flash("Link copied. Send it to her.");
-                } catch {
-                  flash("Copy the link and send it to her.");
-                }
                 setShareOpen(true);
+                const link = shareLink(code);
+                void navigator.clipboard?.writeText(link).then(
+                  () => flash("Link copied. Send it to her."),
+                  () => flash("Copy the link in the box and send it to her."),
+                );
+                void pushShare(code);
               }}
             >
               <Share2 className="size-4" />
@@ -745,8 +759,7 @@ function DishMenu({ id, onClose, onAdd }: { id: string; onClose: () => void; onA
     );
   }
   const heads = Math.max(1, s.table.length);
-  const plates = platesFor(s.table, heads, 2);
-  const factor = cookFactor(recipe.kcal, plates);
+  const split = recipeSplit(s.table, recipe.kcal, heads, recipe.serves);
   const steps = method(recipe, heads);
   const saved = s.favorites.some((f) => f.id === recipe.id);
   return (
@@ -763,10 +776,10 @@ function DishMenu({ id, onClose, onAdd }: { id: string; onClose: () => void; onA
         </div>
         <Photo recipe={recipe} className="mt-4 h-56 w-full rounded-3xl" />
         <ul className="mt-4 divide-y divide-line rounded-3xl border border-line bg-surface px-4">
-          {plates.map((plate) => (
+          {split.plates.map((plate) => (
             <li key={plate.id} className="flex justify-between py-3 text-sm">
               <span>{plate.name}</span>
-              <span className="font-medium">{plate.kcal} kcal</span>
+              <span className="font-medium">{plate.kcal} kcal of this recipe</span>
             </li>
           ))}
         </ul>
@@ -788,7 +801,7 @@ function DishMenu({ id, onClose, onAdd }: { id: string; onClose: () => void; onA
           {recipe.ingredients.map((ing) => (
             <li key={ing.name} className="flex justify-between border-b border-line py-2 text-sm">
               <span>{ing.name}</span>
-              <span className="text-muted">{ingredientAmount(ing.name, factor)}</span>
+              <span className="text-muted">{formatIngredient(ing, heads, recipe.serves)}</span>
             </li>
           ))}
         </ul>
@@ -809,16 +822,27 @@ function DishMenu({ id, onClose, onAdd }: { id: string; onClose: () => void; onA
 function Shop() {
   const s = useKitchen();
   const lines = useMemo(() => {
-    const map = new Map<string, { name: string; aisle: string; factor: number }>();
+    const map = new Map<string, { name: string; aisle: string; unit?: string; measure?: string; qty: number; people: number; serves: number }>();
     s.plan.forEach((day, d) => {
       if (!s.shopDays[d]) return;
       day.forEach((slot, i) => {
         const recipe = slot ? recipeById(slot.id) : undefined;
         if (!recipe || !slot) return;
-        const factor = cookFactor(recipe.kcal, platesFor(s.table, mealServings(slot, s.table.length), i));
+        const people = mealServings(slot, s.table.length);
         recipe.ingredients.forEach((ing) => {
-          const cur = map.get(ing.name);
-          map.set(ing.name, { name: ing.name, aisle: ing.aisle, factor: (cur?.factor ?? 0) + factor });
+          const key = `${ing.name}|${ing.unit ?? ing.measure ?? ""}`;
+          const cur = map.get(key);
+          const serves = recipe.serves || 1;
+          const qty = (ing.qty ?? 0) * (people / serves);
+          map.set(key, {
+            name: ing.name,
+            aisle: ing.aisle,
+            unit: ing.unit,
+            measure: ing.measure,
+            qty: (cur?.qty ?? 0) + qty,
+            people: ing.qty ? 1 : (cur?.people ?? 0) + people,
+            serves,
+          });
         });
       });
     });
@@ -871,10 +895,16 @@ function Shop() {
               {items.map((item) => {
                 const have = s.pantry.includes(item.name);
                 return (
-                  <label key={item.name} className="flex min-h-12 items-center gap-3 border-b border-line py-2">
+                  <label key={`${item.name}-${item.unit ?? item.measure ?? ""}`} className="flex min-h-12 items-center gap-3 border-b border-line py-2">
                     <input type="checkbox" className="size-5 accent-olive" checked={have} onChange={() => s.toggle("pantry", item.name)} />
                     <span className={cn("flex-1", have && "text-muted line-through")}>{item.name}</span>
-                    <span className="text-sm text-muted">{ingredientAmount(item.name, item.factor)}</span>
+                    <span className="text-sm text-muted">
+                      {formatIngredient(
+                        { name: item.name, aisle: item.aisle as "Pantry", qty: item.qty || undefined, unit: item.unit, measure: item.measure },
+                        item.qty ? 1 : item.people,
+                        item.qty ? 1 : item.serves,
+                      )}
+                    </span>
                   </label>
                 );
               })}
@@ -1231,8 +1261,7 @@ function RecipeSheet({
   const r = meal ? recipeById(meal.id) : undefined;
   if (!meal || !r) return null;
   const heads = mealServings(meal, s.table.length);
-  const plates = platesFor(s.table, heads, slot);
-  const factor = cookFactor(r.kcal, plates);
+  const split = recipeSplit(s.table, r.kcal, heads, r.serves);
   const n = macros(r);
   const steps = method(r, heads);
   const current = steps[step];
@@ -1268,25 +1297,25 @@ function RecipeSheet({
                 </div>
               </div>
               <ul className="mt-3 divide-y divide-line">
-                {plates.map((plate) => (
+                {split.plates.map((plate) => (
                   <li key={plate.id} className="flex items-center justify-between py-2 text-sm">
                     <span>{plate.name}</span>
-                    <span className="font-medium">{plate.kcal} kcal</span>
+                    <span className="font-medium">{plate.kcal} kcal of this recipe</span>
                   </li>
                 ))}
                 <li className="flex items-center justify-between py-2 text-sm">
-                  <span>Cook in total</span>
-                  <span className="font-medium">{plates.reduce((sum, plate) => sum + plate.kcal, 0)} kcal</span>
+                  <span>In the pan</span>
+                  <span className="font-medium">{split.batch} kcal</span>
                 </li>
               </ul>
             </div>
             <div className="mt-4 grid grid-cols-5 gap-2 text-center text-xs text-muted">
               {[
-                [Math.round(r.kcal * factor), "kcal"],
-                [Math.round(r.protein * factor), "protein"],
-                [Math.round(n.carbs * factor), "carbs"],
-                [Math.round(n.fat * factor), "fat"],
-                [Math.round(n.fiber * factor), "fiber"],
+                [split.batch, "kcal"],
+                [Math.round(r.protein * (heads / Math.max(1, r.serves || 1))), "protein"],
+                [Math.round(n.carbs * (heads / Math.max(1, r.serves || 1))), "carbs"],
+                [Math.round(n.fat * (heads / Math.max(1, r.serves || 1))), "fat"],
+                [Math.round(n.fiber * (heads / Math.max(1, r.serves || 1))), "fiber"],
               ].map(([v, l]) => (
                 <div key={String(l)} className="rounded-2xl border border-line bg-surface py-3">
                   <b className="block font-display text-lg text-ink">{v}</b>
@@ -1325,7 +1354,7 @@ function RecipeSheet({
                     {ing.name}
                     {s.pantry.includes(ing.name) ? " · have" : ""}
                   </span>
-                  <span className="text-muted">{ingredientAmount(ing.name, factor)}</span>
+                  <span className="text-muted">{formatIngredient(ing, heads, r.serves)}</span>
                 </li>
               ))}
             </ul>
