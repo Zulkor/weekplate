@@ -1,7 +1,12 @@
 import { RECIPES, type Ingredient, type Recipe } from "@/data/catalog";
+import { EXTRA_MEALS } from "@/data/extra-meals";
+import { EXTRA_BREAKFAST } from "@/data/extra-breakfast";
 import { fetchDish, fetchDishBatch, fetchFoodPage } from "@/lib/food-page";
 
 const byId = new Map<string, Recipe>(RECIPES.map((r) => [r.id, r]));
+for (const recipe of [...EXTRA_MEALS, ...EXTRA_BREAKFAST]) {
+  if (!byId.has(recipe.id)) byId.set(recipe.id, recipe);
+}
 const offList: Recipe[] = [];
 const listeners = new Set<() => void>();
 const TARGET = 10000;
@@ -67,11 +72,12 @@ function dietOf(meal: Meal): Recipe["diet"] {
 }
 
 function catOf(meal: Meal): Recipe["cat"] {
+  const name = (meal.strMeal ?? "").toLowerCase();
   const c = (meal.strCategory ?? "").toLowerCase();
-  if (c === "breakfast") return "B";
+  if (c === "breakfast" || /pancake|omelette|omelet|waffle|porridge|smoothie|breakfast/.test(name)) return "B";
   if (c === "dessert") return "D";
   if (c === "side" || c === "starter") return "S";
-  if (c === "vegetarian" || c === "vegan" || c === "pasta" || c === "seafood") return "L";
+  if (c === "vegetarian" || c === "vegan") return "L";
   return "M";
 }
 

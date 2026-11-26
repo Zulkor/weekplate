@@ -216,8 +216,8 @@ export function WeekPlate() {
                 setShareOpen(true);
                 const link = shareLink(code);
                 void navigator.clipboard?.writeText(link).then(
-                  () => flash("Link copied. Send it to her."),
-                  () => flash("Copy the link in the box and send it to her."),
+                  () => flash("Link copied."),
+                  () => flash("Copy the link in the box and send it."),
                 );
                 void pushShare(code);
               }}
@@ -319,7 +319,7 @@ export function WeekPlate() {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 sm:items-center" role="dialog">
           <div className="w-full max-w-md rounded-t-3xl bg-bg p-5 sm:rounded-3xl">
             <h2 className="text-2xl font-semibold tracking-tight">One kitchen</h2>
-            <p className="mt-2 text-sm text-muted">Send her this link. When she opens it, she sees the same week, pantry, and shopping list. Changes from either phone show up on the other.</p>
+            <p className="mt-2 text-sm text-muted">Send this link to the other person. When they open it, they see the same week, pantry, and shopping list. Changes from either phone show up on the other.</p>
             <input readOnly value={shareLink(shareCode)} aria-label="Shared kitchen link" className="mt-4 min-h-12 w-full rounded-2xl border border-line bg-surface px-3 text-sm" onFocus={(e) => e.currentTarget.select()} />
             <div className="mt-4 flex gap-2">
               <button

@@ -145,21 +145,19 @@ export function fits(r: Recipe, s: Pick<State, "diet" | "equipment" | "table">) 
 
 function pool(slot: number, s: State) {
   const all = recipePool().filter((r) => fits(r, s) && r.cat !== "D");
-  const preferred = all.filter((r) => {
-    if (slot === 0) return r.cat === "B";
-    if (slot === 1) return r.cat === "S" || r.cat === "L" || r.cat === "K";
-    return r.cat === "M";
-  });
-  return preferred.length >= 8 ? preferred : all;
+  if (slot === 0) return all.filter((r) => r.cat === "B");
+  if (slot === 1) {
+    const lunch = all.filter((r) => r.cat === "S" || r.cat === "L" || r.cat === "K");
+    return lunch.length >= 8 ? lunch : all;
+  }
+  return all.filter((r) => r.cat === "M");
 }
 
-function pick(slot: number, s: State, used: Set<string>, floor: number) {
-  const list = pool(slot, s).filter((r) => !used.has(r.id));
-  const source = list.length ? list : pool(slot, s);
+function pick(slot: number, s: State, used: Set<string>, _floor: number) {
+  const fresh = pool(slot, s).filter((r) => !used.has(r.id));
+  const source = fresh.length ? fresh : pool(slot, s);
   if (!source.length) return null;
-  const share = floor * [0.28, 0.32, 0.4][slot];
-  const ranked = [...source].sort((a, b) => b.kcal - a.kcal || Math.abs(a.kcal - share) - Math.abs(b.kcal - share));
-  return ranked[Math.floor(Math.random() * Math.min(4, ranked.length))];
+  return source[Math.floor(Math.random() * source.length)];
 }
 
 const starter = (): Person[] => [
